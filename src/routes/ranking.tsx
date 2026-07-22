@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { getRankings, formatTime, type RankEntry } from "@/lib/rankings";
+import { getMedal, medalInfo } from "@/lib/medals";
 
 export const Route = createFileRoute("/ranking")({
   head: () => ({
@@ -87,7 +88,12 @@ function RankingPage() {
                   {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
                 </div>
                 <div className="col-span-4">
-                  <div className="font-semibold">{e.name}</div>
+                  <div className="font-semibold flex items-center gap-1">
+                    <span>{e.name}</span>
+                    <span title={medalInfo(getMedal(e.level, e.score, e.seconds)).label}>
+                      {medalInfo(getMedal(e.level, e.score, e.seconds)).emoji}
+                    </span>
+                  </div>
                   <div className="text-xs text-muted-foreground">{e.age} th</div>
                 </div>
                 <div className="col-span-2 font-display">

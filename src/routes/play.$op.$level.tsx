@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { generateQuestions, type Mode, type Question } from "@/lib/questions";
 import { addRanking } from "@/lib/rankings";
+import { getMedal, medalInfo, getTargets, formatSecs } from "@/lib/medals";
 
 export const Route = createFileRoute("/play/$op/$level")({
   head: () => ({
@@ -180,11 +181,19 @@ function PlayRoute() {
   // ---------- DONE ----------
   if (stage === "done") {
     const pct = Math.round((score / questions.length) * 100);
+    const medal = getMedal(lvl, score, elapsed);
+    const info = medalInfo(medal);
+    const targets = getTargets(lvl);
     return (
       <div className="min-h-screen px-4 py-8 flex items-center">
         <div className="mx-auto w-full max-w-lg text-center animate-pop">
-          <div className="text-7xl mb-3">🎉</div>
-          <h1 className="font-display text-4xl font-bold">Hebat, {name}!</h1>
+          <div className={`mx-auto w-32 h-32 rounded-full bg-gradient-to-br ${info.color} flex items-center justify-center text-7xl shadow-[var(--shadow-fun)] border-4 border-white`}>
+            {info.emoji}
+          </div>
+          <h1 className="font-display text-4xl font-bold mt-4">Hebat, {name}!</h1>
+          <p className="font-display text-2xl mt-1 text-foreground/80">
+            {medal ? `Kamu dapat Medali ${info.label}!` : "Belum dapat medali — coba lagi ya!"}
+          </p>
           <div className="mt-6 rounded-3xl bg-card p-6 shadow-[var(--shadow-fun)] border-2 border-border">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -198,7 +207,17 @@ function PlayRoute() {
               </div>
             </div>
           </div>
-          <div className="mt-6 flex gap-3 justify-center">
+
+          <div className="mt-4 rounded-3xl bg-card p-4 shadow-[var(--shadow-fun)] border-2 border-border text-left text-sm">
+            <div className="font-display text-center text-base mb-2">Target Medali Level {lvl}</div>
+            <div className="space-y-1">
+              <div className="flex justify-between"><span>🥇 Emas</span><span className="font-mono">≥{targets.gold.minScore} • ≤{formatSecs(targets.gold.maxSeconds)}</span></div>
+              <div className="flex justify-between"><span>🥈 Perak</span><span className="font-mono">≥{targets.silver.minScore} • ≤{formatSecs(targets.silver.maxSeconds)}</span></div>
+              <div className="flex justify-between"><span>🥉 Perunggu</span><span className="font-mono">≥{targets.bronze.minScore} • ≤{formatSecs(targets.bronze.maxSeconds)}</span></div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex gap-3 justify-center flex-wrap">
             <button
               onClick={() => { setStage("setup"); setMode(null); }}
               className="btn-pop rounded-2xl bg-primary px-6 py-3 font-display text-lg text-primary-foreground shadow-md"
