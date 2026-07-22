@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { getRankings, formatTime, type RankEntry } from "@/lib/rankings";
+import { getMedal, medalInfo } from "@/lib/medals";
 
 export const Route = createFileRoute("/ranking")({
   head: () => ({
