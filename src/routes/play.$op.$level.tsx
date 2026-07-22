@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { generateQuestions, type Mode, type Question } from "@/lib/questions";
 import { addRanking } from "@/lib/rankings";
+import { getMedal, medalInfo, getTargets, formatSecs } from "@/lib/medals";
 
 export const Route = createFileRoute("/play/$op/$level")({
   head: () => ({
