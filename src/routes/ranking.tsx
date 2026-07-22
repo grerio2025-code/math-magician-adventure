@@ -22,7 +22,7 @@ function RankingPage() {
   const [filter, setFilter] = useState<Filter>("all");
 
   useEffect(() => {
-    setEntries(getRankings());
+    getRankings().then(setEntries);
   }, []);
 
   const filtered = entries
