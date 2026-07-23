@@ -65,13 +65,13 @@ function Home() {
 
         <div className="grid grid-cols-2 gap-4 md:gap-6">
           <section>
-            <h2 className="font-display text-2xl mb-3 text-center text-emerald-700">Penjumlahan ➕</h2>
+            <h2 className="font-display text-lg sm:text-2xl mb-3 text-center text-emerald-700 whitespace-nowrap">Penjumlahan ➕</h2>
             <div className="grid gap-3">
               {plusBtns.map((b) => <LevelButton key={b.label} btn={b} />)}
             </div>
           </section>
           <section>
-            <h2 className="font-display text-2xl mb-3 text-center text-orange-700">Pengurangan ➖</h2>
+            <h2 className="font-display text-lg sm:text-2xl mb-3 text-center text-orange-700 whitespace-nowrap">Pengurangan ➖</h2>
             <div className="grid gap-3">
               {minusBtns.map((b) => <LevelButton key={b.label} btn={b} />)}
             </div>
