@@ -43,7 +43,6 @@ function LevelButton({ btn }: { btn: LevelBtn }) {
     >
       <div className="font-display text-3xl font-bold drop-shadow-sm">{btn.label}</div>
       <div className="text-sm opacity-90 mt-1">{btn.sub}</div>
-      <div className="mt-3 text-xs uppercase tracking-widest opacity-80">Ayo main! →</div>
     </Link>
   );
 }
@@ -61,7 +60,7 @@ function Home() {
           <p className="mt-3 text-lg md:text-xl text-foreground/80 font-semibold">
             🚀 Petualangan Berhitung Seru!
           </p>
-          <p className="text-sm text-muted-foreground mt-1">Pilih tantanganmu di bawah ini</p>
+          <p className="text-sm text-muted-foreground mt-1">untuk Ananda Quddus MIN 5 Ulee Kareng - Banda Aceh</p>
         </header>
 
         <div className="grid grid-cols-2 gap-4 md:gap-6">
