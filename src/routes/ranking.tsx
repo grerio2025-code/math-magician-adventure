@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { getRankings, formatTime, type RankEntry } from "@/lib/rankings";
+import { useEffect, useMemo, useState } from "react";
+import { getRankings, formatTime, type RankEntry, type RankOp } from "@/lib/rankings";
 import { getMedal, medalInfo } from "@/lib/medals";
 
 export const Route = createFileRoute("/ranking")({
@@ -15,20 +15,51 @@ export const Route = createFileRoute("/ranking")({
   component: RankingPage,
 });
 
-type Filter = "all" | "+" | "-";
+type OpFilter = "all" | RankOp;
+type LevelFilter = "all" | 1 | 2 | 3 | 4;
+
+const OP_LABEL: Record<OpFilter, string> = {
+  all: "Semua Operasi",
+  "+": "➕ Plus",
+  "-": "➖ Minus",
+  x: "✖ Kali",
+  "/": "➗ Bagi",
+};
+
+function opDisplay(op: RankOp): string {
+  if (op === "x") return "×";
+  if (op === "/") return "÷";
+  return op;
+}
+
+function opColor(op: RankOp): string {
+  if (op === "+") return "text-emerald-600";
+  if (op === "-") return "text-orange-600";
+  if (op === "x") return "text-indigo-600";
+  return "text-cyan-600";
+}
 
 function RankingPage() {
   const [entries, setEntries] = useState<RankEntry[]>([]);
-  const [filter, setFilter] = useState<Filter>("all");
+  const [opFilter, setOpFilter] = useState<OpFilter>("all");
+  const [levelFilter, setLevelFilter] = useState<LevelFilter>("all");
 
   useEffect(() => {
     getRankings().then(setEntries);
   }, []);
 
-  const filtered = entries
-    .filter((e) => filter === "all" || e.op === filter)
-    .sort((a, b) => b.score - a.score || a.seconds - b.seconds)
-    .slice(0, 50);
+  // × / ÷ only have levels 1–3
+  const maxLevel = opFilter === "x" || opFilter === "/" ? 3 : 4;
+  const effectiveLevel: LevelFilter =
+    levelFilter !== "all" && (levelFilter as number) > maxLevel ? "all" : levelFilter;
+
+  const filtered = useMemo(() => {
+    return entries
+      .filter((e) => opFilter === "all" || e.op === opFilter)
+      .filter((e) => effectiveLevel === "all" || e.level === effectiveLevel)
+      .sort((a, b) => b.score - a.score || a.seconds - b.seconds)
+      .slice(0, 50);
+  }, [entries, opFilter, effectiveLevel]);
 
   return (
     <div className="min-h-screen px-4 py-8">
@@ -39,20 +70,35 @@ function RankingPage() {
           <div className="w-14" />
         </div>
 
-        <div className="flex justify-center gap-2 mb-6">
-          {(["all", "+", "-"] as Filter[]).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`btn-pop rounded-full px-5 py-2 font-display font-bold text-sm border-2 ${
-                filter === f
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card text-foreground border-border"
-              }`}
+        <div className="flex flex-wrap justify-center gap-3 mb-6">
+          <label className="flex items-center gap-2 text-sm font-semibold">
+            <span>Operasi</span>
+            <select
+              value={opFilter}
+              onChange={(e) => setOpFilter(e.target.value as OpFilter)}
+              className="rounded-xl border-2 border-border bg-card px-3 py-2 font-display focus:outline-none focus:border-primary"
             >
-              {f === "all" ? "Semua" : f === "+" ? "➕ Plus" : "➖ Minus"}
-            </button>
-          ))}
+              {(Object.keys(OP_LABEL) as OpFilter[]).map((k) => (
+                <option key={k} value={k}>{OP_LABEL[k]}</option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center gap-2 text-sm font-semibold">
+            <span>Level</span>
+            <select
+              value={String(effectiveLevel)}
+              onChange={(e) => {
+                const v = e.target.value;
+                setLevelFilter(v === "all" ? "all" : (parseInt(v, 10) as LevelFilter));
+              }}
+              className="rounded-xl border-2 border-border bg-card px-3 py-2 font-display focus:outline-none focus:border-primary"
+            >
+              <option value="all">Semua Level</option>
+              {[1, 2, 3, 4].filter((l) => l <= maxLevel).map((l) => (
+                <option key={l} value={l}>Level {l}</option>
+              ))}
+            </select>
+          </label>
         </div>
 
         {filtered.length === 0 ? (
@@ -97,8 +143,8 @@ function RankingPage() {
                   <div className="text-xs text-muted-foreground">{e.age} th</div>
                 </div>
                 <div className="col-span-2 font-display">
-                  <span className={e.op === "+" ? "text-emerald-600" : "text-orange-600"}>
-                    {e.op} L{e.level}
+                  <span className={opColor(e.op)}>
+                    {opDisplay(e.op)} L{e.level}
                   </span>
                 </div>
                 <div className="col-span-2 text-sm">

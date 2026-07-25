@@ -1,9 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
 
+export type RankOp = "+" | "-" | "x" | "/";
+
 export interface RankEntry {
   name: string;
   age: number;
-  op: "+" | "-";
+  op: RankOp;
   level: 1 | 2 | 3 | 4;
   mode: "blind" | "choices";
   score: number;
@@ -23,7 +25,7 @@ export async function getRankings(): Promise<RankEntry[]> {
   return data.map((r) => ({
     name: r.name,
     age: r.age,
-    op: r.op as "+" | "-",
+    op: r.op as RankOp,
     level: r.level as 1 | 2 | 3 | 4,
     mode: r.mode as "blind" | "choices",
     score: r.score,

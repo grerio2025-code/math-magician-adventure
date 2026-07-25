@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { generateQuestions, type Mode, type Question } from "@/lib/questions";
-import { addRanking } from "@/lib/rankings";
+import { generateQuestions, isMemoryLevel, type Mode, type Op, type Question } from "@/lib/questions";
+import { addRanking, type RankOp } from "@/lib/rankings";
 import { getMedal, medalInfo, getTargets, formatSecs } from "@/lib/medals";
 
 export const Route = createFileRoute("/play/$op/$level")({
@@ -18,13 +18,37 @@ export const Route = createFileRoute("/play/$op/$level")({
 
 type Stage = "setup" | "playing" | "done";
 
-function PlayRoute() {
-  const { op, level } = Route.useParams();
-  const navigate = useNavigate();
-  const opSym: "+" | "-" = op === "plus" ? "+" : "-";
-  const lvl = Math.min(4, Math.max(1, parseInt(level, 10))) as 1 | 2 | 3 | 4;
+const OP_MAP: Record<string, Op> = { plus: "+", minus: "-", times: "x", divide: "/" };
 
-  const [mode, setMode] = useState<Mode | null>(null);
+function opSymbol(op: Op): string {
+  if (op === "x") return "×";
+  if (op === "/") return "÷";
+  return op;
+}
+
+function opWordOf(op: Op): string {
+  if (op === "+") return "Penjumlahan";
+  if (op === "-") return "Pengurangan";
+  if (op === "x") return "Perkalian";
+  return "Pembagian";
+}
+
+function opGradient(op: Op): string {
+  if (op === "+") return "var(--gradient-plus)";
+  if (op === "-") return "var(--gradient-minus)";
+  if (op === "x") return "linear-gradient(135deg, #6366f1, #a855f7)";
+  return "linear-gradient(135deg, #0ea5e9, #14b8a6)";
+}
+
+function PlayRoute() {
+  const { op: opParam, level } = Route.useParams();
+  const navigate = useNavigate();
+  const op: Op = OP_MAP[opParam] ?? "+";
+  const maxLvl = op === "+" || op === "-" ? 4 : 3;
+  const lvl = Math.min(maxLvl, Math.max(1, parseInt(level, 10))) as 1 | 2 | 3 | 4;
+  const isMemory = isMemoryLevel(op, lvl);
+
+  const [mode, setMode] = useState<Mode | null>(isMemory ? "choices" : null);
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [stage, setStage] = useState<Stage>("setup");
@@ -37,6 +61,10 @@ function PlayRoute() {
   const [elapsed, setElapsed] = useState(0);
   const startRef = useRef<number>(0);
 
+  // memory phase
+  const [showMemorize, setShowMemorize] = useState(false);
+  const [memCountdown, setMemCountdown] = useState(0);
+
   useEffect(() => {
     if (stage !== "playing") return;
     startRef.current = Date.now();
@@ -46,17 +74,39 @@ function PlayRoute() {
     return () => clearInterval(id);
   }, [stage]);
 
+  const current = questions[index];
+
+  // Trigger memory phase when a new memory question comes into view
+  useEffect(() => {
+    if (stage !== "playing" || !current) return;
+    if (current.shown && current.hideSeconds) {
+      setShowMemorize(true);
+      setMemCountdown(current.hideSeconds);
+    } else {
+      setShowMemorize(false);
+    }
+  }, [stage, index, current]);
+
+  // countdown timer for memorize phase
+  useEffect(() => {
+    if (!showMemorize) return;
+    if (memCountdown <= 0) {
+      setShowMemorize(false);
+      return;
+    }
+    const t = setTimeout(() => setMemCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [showMemorize, memCountdown]);
+
   const start = () => {
     if (!mode || !name.trim() || !age.trim()) return;
-    setQuestions(generateQuestions(opSym, lvl, mode));
+    setQuestions(generateQuestions(op, lvl, mode));
     setIndex(0);
     setScore(0);
     setInput("");
     setElapsed(0);
     setStage("playing");
   };
-
-  const current = questions[index];
 
   const submit = (val: number) => {
     if (feedback !== null || !current) return;
@@ -73,7 +123,7 @@ function PlayRoute() {
         addRanking({
           name: name.trim(),
           age: parseInt(age, 10) || 0,
-          op: opSym,
+          op: op as RankOp,
           level: lvl,
           mode: mode!,
           score: ok ? score + 1 : score,
@@ -88,8 +138,9 @@ function PlayRoute() {
     }, 700);
   };
 
-  const gradient = opSym === "+" ? "var(--gradient-plus)" : "var(--gradient-minus)";
-  const opWord = opSym === "+" ? "Penjumlahan" : "Pengurangan";
+  const gradient = opGradient(op);
+  const opWord = opWordOf(op);
+  const sym = opSymbol(op);
 
   const timeLabel = useMemo(() => {
     const m = Math.floor(elapsed / 60);
@@ -108,13 +159,16 @@ function PlayRoute() {
             style={{ background: gradient }}
           >
             <h1 className="font-display text-4xl font-bold drop-shadow">
-              {opSym} Level {lvl}
+              {sym} Level {lvl}
             </h1>
             <p className="opacity-90">{opWord} — 50 soal seru</p>
+            {isMemory && (
+              <p className="opacity-90 text-sm mt-1">Mode Hafalan: lihat & ingat, lalu pilih jawabannya!</p>
+            )}
           </div>
 
           <div className="mt-6 rounded-3xl bg-card p-6 shadow-[var(--shadow-fun)] border-2 border-border">
-            {!mode ? (
+            {!isMemory && !mode ? (
               <>
                 <h2 className="font-display text-2xl mb-4 text-center">Pilih Mode Bermain</h2>
                 <div className="grid grid-cols-2 gap-3">
@@ -158,10 +212,17 @@ function PlayRoute() {
                     className="mt-1 w-full rounded-xl border-2 border-border bg-input px-4 py-3 focus:outline-none focus:border-primary"
                   />
                 </label>
-                <div className="text-center text-sm text-muted-foreground mb-3">
-                  Mode: <b>{mode === "blind" ? "🙈 Blind" : "🎯 Choices"}</b>{" "}
-                  <button onClick={() => setMode(null)} className="underline text-primary">ubah</button>
-                </div>
+                {!isMemory && (
+                  <div className="text-center text-sm text-muted-foreground mb-3">
+                    Mode: <b>{mode === "blind" ? "🙈 Blind" : "🎯 Choices"}</b>{" "}
+                    <button onClick={() => setMode(null)} className="underline text-primary">ubah</button>
+                  </div>
+                )}
+                {isMemory && (
+                  <div className="text-center text-sm text-muted-foreground mb-3">
+                    Mode: <b>🧠 Hafalan</b>
+                  </div>
+                )}
                 <button
                   onClick={start}
                   disabled={!name.trim() || !age.trim()}
@@ -219,7 +280,7 @@ function PlayRoute() {
 
           <div className="mt-6 flex gap-3 justify-center flex-wrap">
             <button
-              onClick={() => { setStage("setup"); setMode(null); }}
+              onClick={() => { setStage("setup"); setMode(isMemory ? "choices" : null); }}
               className="btn-pop rounded-2xl bg-primary px-6 py-3 font-display text-lg text-primary-foreground shadow-md"
             >
               Main Lagi
@@ -259,65 +320,96 @@ function PlayRoute() {
           />
         </div>
 
-        <div
-          className="mt-6 rounded-3xl p-8 md:p-12 text-white text-center shadow-[var(--shadow-fun)] border-4 border-white/60 relative overflow-hidden"
-          style={{ background: gradient }}
-        >
-          {feedback && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-pop">
-              <div className="text-8xl">
-                {feedback === "correct" ? "✅" : "❌"}
+        {showMemorize && current?.shown ? (
+          <>
+            <div
+              className="mt-6 rounded-3xl p-6 md:p-8 text-white text-center shadow-[var(--shadow-fun)] border-4 border-white/60"
+              style={{ background: gradient }}
+            >
+              <div className="text-xs uppercase tracking-widest opacity-80">Hafalkan! ({memCountdown}s)</div>
+              <div className="mt-4 grid gap-3">
+                {current.shown.map((f, i) => (
+                  <div
+                    key={i}
+                    className="rounded-2xl bg-white/20 border-2 border-white/60 py-3 md:py-4 font-display text-3xl md:text-5xl font-bold drop-shadow"
+                  >
+                    {f.a} {opSymbol(f.op)} {f.b} = {f.answer}
+                  </div>
+                ))}
               </div>
             </div>
-          )}
-          <div className="text-xs uppercase tracking-widest opacity-80">Soal {index + 1}</div>
-          <div className="font-display text-5xl md:text-7xl font-bold mt-2 drop-shadow">
-            {current.a} {current.op} {current.b} = ?
-          </div>
-        </div>
-
-        <div className="mt-6">
-          {mode === "blind" ? (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const n = parseInt(input, 10);
-                if (!Number.isNaN(n)) submit(n);
-              }}
-              className="flex gap-3"
-            >
-              <input
-                autoFocus
-                type="number"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                disabled={feedback !== null}
-                placeholder="Jawabanmu…"
-                className="flex-1 rounded-2xl border-4 border-white/70 bg-white px-5 py-4 text-2xl font-display shadow-md focus:outline-none focus:border-primary"
-              />
+            <div className="mt-4 flex justify-center">
               <button
-                type="submit"
-                disabled={feedback !== null || input === ""}
-                className="btn-pop rounded-2xl bg-primary px-6 py-4 font-display text-xl text-primary-foreground shadow-md disabled:opacity-50"
+                onClick={() => { setShowMemorize(false); setMemCountdown(0); }}
+                className="btn-pop rounded-2xl bg-primary px-6 py-3 font-display text-lg text-primary-foreground shadow-md"
               >
-                OK
+                ⏭ Lanjut
               </button>
-            </form>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {current.choices!.map((c) => (
-                <button
-                  key={c}
-                  disabled={feedback !== null}
-                  onClick={() => submit(c)}
-                  className="btn-pop rounded-2xl bg-card border-4 border-white/70 py-5 font-display text-2xl shadow-md hover:bg-accent disabled:opacity-60"
-                >
-                  {c}
-                </button>
-              ))}
             </div>
-          )}
-        </div>
+          </>
+        ) : (
+          <>
+            <div
+              className="mt-6 rounded-3xl p-8 md:p-12 text-white text-center shadow-[var(--shadow-fun)] border-4 border-white/60 relative overflow-hidden"
+              style={{ background: gradient }}
+            >
+              {feedback && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-pop">
+                  <div className="text-8xl">
+                    {feedback === "correct" ? "✅" : "❌"}
+                  </div>
+                </div>
+              )}
+              <div className="text-xs uppercase tracking-widest opacity-80">Soal {index + 1}</div>
+              <div className="font-display text-5xl md:text-7xl font-bold mt-2 drop-shadow">
+                {current.a} {opSymbol(current.op)} {current.b} = ?
+              </div>
+            </div>
+
+            <div className="mt-6">
+              {mode === "blind" ? (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const n = parseInt(input, 10);
+                    if (!Number.isNaN(n)) submit(n);
+                  }}
+                  className="flex gap-3"
+                >
+                  <input
+                    autoFocus
+                    type="number"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    disabled={feedback !== null}
+                    placeholder="Jawabanmu…"
+                    className="flex-1 rounded-2xl border-4 border-white/70 bg-white px-5 py-4 text-2xl font-display shadow-md focus:outline-none focus:border-primary"
+                  />
+                  <button
+                    type="submit"
+                    disabled={feedback !== null || input === ""}
+                    className="btn-pop rounded-2xl bg-primary px-6 py-4 font-display text-xl text-primary-foreground shadow-md disabled:opacity-50"
+                  >
+                    OK
+                  </button>
+                </form>
+              ) : (
+                <div className={`grid gap-3 ${current.choices!.length === 2 ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-3"}`}>
+                  {current.choices!.map((c) => (
+                    <button
+                      key={c}
+                      disabled={feedback !== null}
+                      onClick={() => submit(c)}
+                      className="btn-pop rounded-2xl bg-card border-4 border-white/70 py-5 font-display text-2xl shadow-md hover:bg-accent disabled:opacity-60"
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
