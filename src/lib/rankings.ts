@@ -1,9 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
 
+export type RankOp = "+" | "-" | "x" | "/";
+
 export interface RankEntry {
   name: string;
   age: number;
-  op: "+" | "-";
+  op: RankOp;
   level: 1 | 2 | 3 | 4;
   mode: "blind" | "choices";
   score: number;
