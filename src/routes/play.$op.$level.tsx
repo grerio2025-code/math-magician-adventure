@@ -107,37 +107,56 @@ function PlayRoute() {
     setScore(0);
     setInput("");
     setElapsed(0);
+    setSaveStatus("idle");
+    finalRef.current = null;
     setStage("playing");
+  };
+
+  const persistScore = async (finalScore: number, seconds: number) => {
+    setSaveStatus("saving");
+    const { error } = await addRanking({
+      name: name.trim(),
+      age: parseInt(age, 10) || 0,
+      op: op as RankOp,
+      level: lvl,
+      mode: mode!,
+      score: finalScore,
+      total: questions.length,
+      seconds,
+      date: Date.now(),
+    });
+    setSaveStatus(error ? "error" : "saved");
   };
 
   const submit = (val: number) => {
     if (feedback !== null || !current) return;
     const ok = val === current.answer;
-    if (ok) setScore((s) => s + 1);
+    const nextScore = ok ? score + 1 : score;
+    if (ok) setScore(nextScore);
     setFeedback(ok ? "correct" : "wrong");
-    setTimeout(async () => {
+    const isLast = index + 1 >= questions.length;
+    if (isLast) {
+      const seconds = Math.floor((Date.now() - startRef.current) / 1000);
+      setElapsed(seconds);
+      finalRef.current = { score: nextScore, seconds };
+      // fire immediately so it doesn't depend on the 700ms feedback animation
+      void persistScore(nextScore, seconds);
+    }
+    setTimeout(() => {
       setFeedback(null);
       setInput("");
-      if (index + 1 >= questions.length) {
-        const total = questions.length;
-        const seconds = Math.floor((Date.now() - startRef.current) / 1000);
-        setElapsed(seconds);
-        await addRanking({
-          name: name.trim(),
-          age: parseInt(age, 10) || 0,
-          op: op as RankOp,
-          level: lvl,
-          mode: mode!,
-          score: ok ? score + 1 : score,
-          total,
-          seconds,
-          date: Date.now(),
-        });
+      if (isLast) {
         setStage("done");
       } else {
         setIndex((i) => i + 1);
       }
     }, 700);
+  };
+
+  const resave = () => {
+    const f = finalRef.current;
+    if (!f) return;
+    void persistScore(f.score, f.seconds);
   };
 
   const gradient = opGradient(op);
