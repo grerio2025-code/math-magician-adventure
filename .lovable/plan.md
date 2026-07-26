@@ -1,64 +1,57 @@
-## Tambahan: Perkalian (×) & Pembagian (÷) + Ranking Filter
+## Perubahan yang akan dilakukan
 
-### 1. Home page (`src/routes/index.tsx`)
-- Ganti layout dari 2 kolom → 4 kolom (di layar besar) / 2×2 (di layar kecil): **+**, **−**, **×**, **÷**.
-- **×** punya 3 level, **÷** punya 3 level.
-- Ubah subtitle di bawah "Go-Q" menjadi: **"Go Count and Memorize Numbers with Q"** (sebelumnya "🚀 Petualangan Berhitung Seru!").
+### 1) Perkalian & Pembagian L1/L2 — pengali sampai 10
+`src/lib/questions.ts` → `tablePool(op, N)`:
+- Ubah loop `m` dari 1..5 menjadi **1..10**.
+- Seri (N) tetap: L1 = tabel 1–5, L2 = tabel 6–10.
+- Pool per seri jadi 10 fakta (mis. `3×1, 3×2, … 3×10`). Mode hafalan tetap ambil 2/3/4 fakta acak dari pool ini.
+- Pembagian ikut otomatis (dividend = N×m, hasil m ∈ 1..10).
 
-### 2. Route baru untuk mode hafalan
-Perkalian L1/L2 dan Pembagian L1/L2 pakai **mode hafalan** (memory) — beda alur dari + / −. Buat route/komponen terpisah agar tidak mencampur logika:
-- Route dinamis tetap `/play/$op/$level` dengan `op` ∈ `plus | minus | times | divide`.
-- Di dalam komponen play, deteksi `op`:
-  - `plus`/`minus` → alur lama (tidak berubah).
-  - `times`/`divide` **level 1 & 2** → alur **memory**.
-  - `times`/`divide` **level 3** → alur **acak** mirip + / − (tanpa fase hafalan).
+### 2) Durasi hafalan diperpanjang
+`memoryQuestions` di `src/lib/questions.ts`:
+- Petakan `hideSeconds`: **k=2 → 2 dtk**, **k=3 → 4 dtk**, **k=4 → 6 dtk** (sebelumnya 2/3/4).
 
-### 3. Generator soal (`src/lib/questions.ts`)
-Tambah tipe `Op = "+" | "-" | "x" | "/"` dan generator:
-- **× L1 (angka 1–5), × L2 (angka 6–10)** dan **÷ L1 (1–5), ÷ L2 (6–10)** — alur *memory*:
-  - Tabel per grup: perkalian/pembagian dengan pengali/pembagi tertentu (mis. tabel-1 untuk L1 grup pertama), 10 soal per grup, 5 grup → 50 soal.
-  - Struktur soal berisi:
-    - `shown`: daftar fakta yang ditampilkan untuk dihafal (2, 3, atau 4 fakta).
-    - `hideSeconds`: 2 / 3 / 4 detik sesuai jumlah fakta.
-    - `question` + `choices` (2 angka, salah satunya benar) dari salah satu fakta yang tadi ditampilkan.
-  - Dalam 10 soal per grup: 3 soal pakai 2 fakta (2 dtk), 3 soal pakai 3 fakta (3 dtk), 4 soal pakai 4 fakta (4 dtk).
-  - Pembagian: gunakan hasil bulat, mis. tabel-3 → `3,6,9,12,15 ÷ 3 = 1..5`.
-- **× L3** (50 soal acak):
-  - 10 soal pakai pengali ∈ {1,2,3}, pengali lain 1..10.
-  - 20 soal pengali ∈ {4,5,6}.
-  - 20 soal pengali ∈ {7,8,9}.
-  - Mode `blind` atau `choices` (choices = 3 opsi, sama seperti +/−).
-- **÷ L3** (50 soal acak, hasil selalu bulat): pola sama seperti × L3, dibuat dengan generate hasil × pembagi lalu balik jadi soal ÷.
+### 3) Ranking × / ÷ tidak ter-record
+Diagnosis belum terkonfirmasi (DB view read-only). Dari data yang ada, semua baris `rankings` hanya op `+` / `-`; belum pernah ada `x` / `/`. Kemungkinan: insert gagal senyap karena `addRanking` di-fire tanpa `await` sehingga error tidak terlihat, atau ada nilai yang menabrak check constraint saat mode hafalan.
 
-### 4. Komponen Play — mode memory
-Di `src/routes/play.$op.$level.tsx` (atau pecah sedikit menjadi sub-komponen):
-- Deteksi bila soal punya `shown` → render fase hafalan:
-  - Tampilkan kartu-kartu fakta besar-besar (mis. `1 × 3 = 3`).
-  - Timer countdown (2/3/4 detik) + tombol **⏭ Lanjut** untuk skip lebih cepat.
-- Setelah countdown/skip → tampilkan pertanyaan (`1 × 3 = ?`) dengan 2 tombol pilihan.
-- Feedback ✅/❌ sekilas, sama seperti alur lama.
-- Timer permainan berjalan sejak "Mulai" sampai soal ke-50 (fase hafalan **ikut dihitung**, konsisten dengan spec "meringkas waktu").
+Yang akan dilakukan:
+- `src/lib/rankings.ts` → `addRanking` mengembalikan `{ error }` dari Supabase.
+- `src/routes/play.$op.$level.tsx` → `await addRanking(...)` di dalam handler selesai; kalau ada error, `console.warn` dengan payload agar cause-nya kelihatan (score/total/seconds/mode). Pindahkan `setStage("done")` setelah await agar UI tidak balapan.
+- Verifikasi setelah build: main × L1 sampai selesai, cek Ranking dan console.
 
-### 5. Sistem medali (`src/lib/medals.ts`)
-- Perluas `getTargets` agar menerima level 1–3 untuk × dan ÷.
-- **xL1 & ÷L1** pakai target Level 1 (+/−) — Emas 48–50 ≤1:30, Perak 45–47 ≤2:00, Perunggu 40–44 ≤3:00.
-- **xL2 & ÷L2** pakai target Level 2 — Emas 47–50 ≤2:00, Perak 44–46 ≤2:45, Perunggu 38–43 ≤4:00.
-- **xL3 & ÷L3** pakai target Level 3 — Emas 46–50 ≤3:00, Perak 42–45 ≤4:00, Perunggu 36–41 ≤5:00.
+### 4) Penjumlahan Level 4 → “HC Level 1” (Lomba Hitung Cepat)
+Home (`src/routes/index.tsx`):
+- Tombol keempat di kolom Penjumlahan tetap di posisinya. Ubah `label: "HC Level 1"`, `sub: "Lomba Hitung Cepat"`. Route parameter tetap `plus/4` supaya kompatibel dengan schema `rankings` (op tersimpan sebagai `+`, level `4`).
 
-### 6. Ranking (`src/routes/ranking.tsx`)
-- Ganti filter chip lama menjadi **2 dropdown**:
-  - Operasi: `Semua`, `➕ Plus`, `➖ Minus`, `✖ Kali`, `➗ Bagi`.
-  - Level: `Semua`, `1`, `2`, `3`, `4` (level 4 di-disable bila operasi × atau ÷ dipilih).
-- Filter diterapkan client-side pada hasil `getRankings()` yang sudah ada.
-- Emoji medali per baris tetap; medal lookup diperluas untuk × dan ÷.
+Generator `src/lib/questions.ts`:
+- Perluas `Question` dengan field opsional `operands: number[]`, `signs: ("+"|"-")[]`, `display: string` untuk soal multi-operand.
+- Fungsi baru `hcLevel1(mode)` menghasilkan 50 soal:
+  - **25 soal pertama**: 3 operand dengan ukuran digit `{1d, 2d, 3d}` di-shuffle posisinya, semua tanda `+`. Contoh: `20+43+4`, `63+5+253`.
+  - **25 soal terakhir**: 3 operand ukuran `{1d, 2d, 3d}` di-shuffle, tanda operand ke-2 & ke-3 dipilih acak `+`/`-`. Jamin hasil ≥ 0 (kalau negatif, flip tanda). Contoh: `320-20+88`, `543+7-45`.
+- Range digit: 1d = 1..9, 2d = 10..99, 3d = 100..999.
+- Choices: pakai `makeChoices(answer, 3)` yang sudah ada.
 
-### 7. Database
-Tabel `rankings` sudah pakai `op text` dan `level integer` — **tidak perlu migrasi**. Nilai baru `"x"` dan `"/"` cukup disimpan lewat insert yang sudah ada.
+### 5) Pengurangan Level 4 → “HC Level 2”
+Home: tombol keempat kolom Pengurangan tetap di posisinya. `label: "HC Level 2"`, `sub: "Lomba Hitung Cepat"`. Route tetap `minus/4` (tersimpan sebagai op `-`, level `4`).
 
-### File yang berubah
-- `src/routes/index.tsx` — 4 kolom operasi, subtitle baru.
-- `src/lib/questions.ts` — tipe `Op` diperluas, generator memory & acak untuk × dan ÷.
-- `src/routes/play.$op.$level.tsx` — dukung `op` baru + fase hafalan.
-- `src/lib/medals.ts` — target medali untuk × dan ÷.
-- `src/routes/ranking.tsx` — dropdown operasi & level.
-- `src/lib/rankings.ts` — perluas tipe `op` menjadi `"+" | "-" | "x" | "/"`.
+Generator: fungsi `hcLevel2(mode)` menghasilkan 50 soal, semuanya multi-operand:
+- 4 operand dengan ukuran digit `[3d, 2d, 3d, 1d]` di-shuffle posisinya.
+- Operand pertama selalu `+`; tiga tanda berikutnya acak `+`/`-`.
+- Jamin hasil ≥ 0 (flip tanda operand yang bikin negatif).
+- Contoh: `200+25-115+9`, `400+200-150-50`.
+
+### 6) Play component — render multi-operand
+`src/routes/play.$op.$level.tsx`:
+- Kalau `current.display` ada, tampilkan `current.display` menggantikan `a op b` di kartu soal.
+- Alur lainnya (blind/choices, feedback, timer, medali) tidak berubah.
+- Judul header kartu setup: kalau `op+/− level 4`, ganti tampilan “➕/➖ Level 4” jadi “HC Level 1/2” dan subtitle jadi “Lomba Hitung Cepat” (kosmetik saja; tetap simpan op/level asli di DB).
+
+### 7) Medali & Ranking untuk HC
+- Target medali HC1 & HC2 pakai baris Level 4 yang sudah ada di `src/lib/medals.ts` (tidak diubah).
+- Ranking page tidak perlu berubah — tetap muncul di filter “Plus / Level 4” dan “Minus / Level 4”. (Tidak menambah label “HC” di ranking supaya konsisten dgn data lama; bisa ditambah bila diminta.)
+
+## Detail teknis singkat
+
+- Tipe `Question` ditambah opsional: `operands?: number[]; signs?: ("+"|"-")[]; display?: string;`. Untuk HC, `a`/`b` diisi dua operand pertama saja agar tipe backwards-compatible; komponen play memakai `display` bila ada.
+- Tidak ada perubahan schema database.
+- Perubahan file: `src/lib/questions.ts`, `src/lib/rankings.ts`, `src/routes/play.$op.$level.tsx`, `src/routes/index.tsx`.
