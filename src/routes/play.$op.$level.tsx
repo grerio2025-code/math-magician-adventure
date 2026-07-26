@@ -60,6 +60,8 @@ function PlayRoute() {
   const [feedback, setFeedback] = useState<null | "correct" | "wrong">(null);
   const [elapsed, setElapsed] = useState(0);
   const startRef = useRef<number>(0);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const finalRef = useRef<{ score: number; seconds: number } | null>(null);
 
   // memory phase
   const [showMemorize, setShowMemorize] = useState(false);
