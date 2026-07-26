@@ -36,7 +36,7 @@ export async function getRankings(): Promise<RankEntry[]> {
 }
 
 export async function addRanking(entry: RankEntry) {
-  await supabase.from("rankings").insert({
+  const { error } = await supabase.from("rankings").insert({
     name: entry.name,
     age: entry.age,
     op: entry.op,
@@ -46,6 +46,10 @@ export async function addRanking(entry: RankEntry) {
     total: entry.total,
     seconds: entry.seconds,
   });
+  if (error) {
+    console.warn("addRanking failed", error, entry);
+  }
+  return { error };
 }
 
 export function formatTime(seconds: number) {
