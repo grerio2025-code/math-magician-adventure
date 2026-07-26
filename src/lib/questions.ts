@@ -18,6 +18,11 @@ export interface Question {
   shown?: Fact[];
   /** memory-mode: seconds to display shown facts */
   hideSeconds?: number;
+  /** multi-operand (HC) — operands & their signs; first sign is always "+" implicitly */
+  operands?: number[];
+  signs?: ("+" | "-")[];
+  /** rendered expression for multi-operand, e.g. "20+43+4" */
+  display?: string;
 }
 
 const rand = (min: number, max: number) =>
@@ -37,9 +42,9 @@ export type PlusMinusLevel = 1 | 2 | 3 | 4;
 /** Levels for multiplication/division. */
 export type TimesDivLevel = 1 | 2 | 3;
 
-// ---------- Addition / Subtraction (unchanged) ----------
+// ---------- Addition / Subtraction (levels 1–3 unchanged) ----------
 
-function genPair(op: "+" | "-", level: PlusMinusLevel, phase: 0 | 1 | 2 | 3): [number, number] {
+function genPair(op: "+" | "-", level: 1 | 2 | 3, phase: 0 | 1 | 2 | 3): [number, number] {
   if (op === "+") {
     if (level === 1) {
       if (phase === 0) return [rand(1, 4), rand(1, 4)];
@@ -61,24 +66,14 @@ function genPair(op: "+" | "-", level: PlusMinusLevel, phase: 0 | 1 | 2 | 3): [n
       const two = rand(41, 99), three = rand(301, 999);
       return Math.random() < 0.5 ? [two, three] : [three, two];
     }
-    if (level === 3) {
-      if (phase === 0) return [rand(100, 400), rand(100, 400)];
-      if (phase === 1) return [rand(401, 999), rand(401, 999)];
-      if (phase === 2) {
-        const three = rand(100, 400), four = rand(1000, 3000);
-        return Math.random() < 0.5 ? [three, four] : [four, three];
-      }
-      const three = rand(401, 999), four = rand(3001, 9999);
+    if (phase === 0) return [rand(100, 400), rand(100, 400)];
+    if (phase === 1) return [rand(401, 999), rand(401, 999)];
+    if (phase === 2) {
+      const three = rand(100, 400), four = rand(1000, 3000);
       return Math.random() < 0.5 ? [three, four] : [four, three];
     }
-    if (phase === 0) return [rand(1000, 4000), rand(1000, 4000)];
-    if (phase === 1) return [rand(4001, 9999), rand(4001, 9999)];
-    if (phase === 2) {
-      const four = rand(1000, 4000), five = rand(10000, 30000);
-      return Math.random() < 0.5 ? [four, five] : [five, four];
-    }
-    const four = rand(4001, 9999), five = rand(30001, 99999);
-    return Math.random() < 0.5 ? [four, five] : [five, four];
+    const three = rand(401, 999), four = rand(3001, 9999);
+    return Math.random() < 0.5 ? [three, four] : [four, three];
   }
 
   const orderDesc = (x: number, y: number): [number, number] =>
@@ -96,16 +91,10 @@ function genPair(op: "+" | "-", level: PlusMinusLevel, phase: 0 | 1 | 2 | 3): [n
     if (phase === 2) return orderDesc(rand(100, 300), rand(10, 40));
     return orderDesc(rand(301, 999), rand(41, 99));
   }
-  if (level === 3) {
-    if (phase === 0) return orderDesc(rand(100, 400), rand(100, 400));
-    if (phase === 1) return orderDesc(rand(401, 999), rand(401, 999));
-    if (phase === 2) return orderDesc(rand(1000, 3000), rand(100, 400));
-    return orderDesc(rand(3001, 9999), rand(401, 999));
-  }
-  if (phase === 0) return orderDesc(rand(1000, 4000), rand(1000, 4000));
-  if (phase === 1) return orderDesc(rand(4001, 9999), rand(4001, 9999));
-  if (phase === 2) return orderDesc(rand(10000, 30000), rand(1000, 4000));
-  return orderDesc(rand(30001, 99999), rand(4001, 9999));
+  if (phase === 0) return orderDesc(rand(100, 400), rand(100, 400));
+  if (phase === 1) return orderDesc(rand(401, 999), rand(401, 999));
+  if (phase === 2) return orderDesc(rand(1000, 3000), rand(100, 400));
+  return orderDesc(rand(3001, 9999), rand(401, 999));
 }
 
 function makeChoices(answer: number, count = 3): number[] {
@@ -122,7 +111,7 @@ function makeChoices(answer: number, count = 3): number[] {
   return shuffle(Array.from(set));
 }
 
-function plusMinusQuestions(op: "+" | "-", level: PlusMinusLevel, mode: Mode): Question[] {
+function plusMinusQuestions(op: "+" | "-", level: 1 | 2 | 3, mode: Mode): Question[] {
   const phases: { count: number; phase: 0 | 1 | 2 | 3 }[] = [
     { count: 10, phase: 0 },
     { count: 10, phase: 1 },
@@ -142,21 +131,101 @@ function plusMinusQuestions(op: "+" | "-", level: PlusMinusLevel, mode: Mode): Q
   return qs;
 }
 
+// ---------- HC (Lomba Hitung Cepat) ----------
+
+const randDigit = (d: 1 | 2 | 3): number => {
+  if (d === 1) return rand(1, 9);
+  if (d === 2) return rand(10, 99);
+  return rand(100, 999);
+};
+
+function evalExpr(operands: number[], signs: ("+" | "-")[]): number {
+  let total = operands[0];
+  for (let i = 1; i < operands.length; i++) {
+    total += signs[i - 1] === "+" ? operands[i] : -operands[i];
+  }
+  return total;
+}
+
+function buildDisplay(operands: number[], signs: ("+" | "-")[]): string {
+  let s = String(operands[0]);
+  for (let i = 1; i < operands.length; i++) {
+    s += (signs[i - 1] === "+" ? "+" : "−") + operands[i];
+  }
+  return s;
+}
+
+/** Build a multi-operand question; auto-flips signs to keep result >= 0. */
+function makeMultiOperand(digitSizes: (1 | 2 | 3)[], allowMinus: boolean): Question {
+  const sizes = shuffle(digitSizes);
+  const operands = sizes.map(randDigit);
+  const signs: ("+" | "-")[] = operands.slice(1).map(() =>
+    allowMinus && Math.random() < 0.5 ? "-" : "+",
+  );
+
+  // ensure non-negative running total; flip offending sign to +
+  let running = operands[0];
+  for (let i = 1; i < operands.length; i++) {
+    const next = signs[i - 1] === "+" ? operands[i] : -operands[i];
+    if (running + next < 0) signs[i - 1] = "+";
+    running += signs[i - 1] === "+" ? operands[i] : -operands[i];
+  }
+
+  const answer = evalExpr(operands, signs);
+  return {
+    a: operands[0],
+    b: operands[1] ?? 0,
+    op: "+",
+    answer,
+    operands,
+    signs,
+    display: buildDisplay(operands, signs),
+  };
+}
+
+function hcLevel1(mode: Mode): Question[] {
+  const out: Question[] = [];
+  for (let i = 0; i < 25; i++) {
+    const q = makeMultiOperand([1, 2, 3], false);
+    if (mode === "choices") q.choices = makeChoices(q.answer, 3);
+    out.push(q);
+  }
+  for (let i = 0; i < 25; i++) {
+    const q = makeMultiOperand([1, 2, 3], true);
+    if (mode === "choices") q.choices = makeChoices(q.answer, 3);
+    out.push(q);
+  }
+  return out;
+}
+
+function hcLevel2(mode: Mode): Question[] {
+  const out: Question[] = [];
+  for (let i = 0; i < 50; i++) {
+    const q = makeMultiOperand([3, 2, 3, 1], true);
+    // store op as "-" for compatibility with the minus track
+    q.op = "-";
+    if (mode === "choices") q.choices = makeChoices(q.answer, 3);
+    out.push(q);
+  }
+  return out;
+}
+
 // ---------- Multiplication / Division ----------
 
-/** Build the 5-fact pool for a given "table" N. */
+/** Build the 10-fact pool for a given "table" N (multipliers 1..10). */
 function tablePool(op: "x" | "/", N: number): Fact[] {
   const facts: Fact[] = [];
-  for (let m = 1; m <= 5; m++) {
+  for (let m = 1; m <= 10; m++) {
     if (op === "x") facts.push({ a: N, b: m, op: "x", answer: N * m });
     else facts.push({ a: N * m, b: N, op: "/", answer: m });
   }
   return facts;
 }
 
+const MEMORY_SECONDS: Record<2 | 3 | 4, number> = { 2: 2, 3: 4, 4: 6 };
+
 function memoryQuestions(op: "x" | "/", tables: number[]): Question[] {
   const out: Question[] = [];
-  // pattern per table: 3 soal × 2 shown, 3 soal × 3 shown, 4 soal × 4 shown  (=10)
   const pattern: { k: 2 | 3 | 4; count: number }[] = [
     { k: 2, count: 3 },
     { k: 3, count: 3 },
@@ -183,7 +252,7 @@ function memoryQuestions(op: "x" | "/", tables: number[]): Question[] {
           op,
           answer: target.answer,
           shown,
-          hideSeconds: k,
+          hideSeconds: MEMORY_SECONDS[k],
           choices: shuffle([target.answer, wrong]),
         });
       }
@@ -232,7 +301,8 @@ export function generateQuestions(
 ): Question[] {
   if (op === "+" || op === "-") {
     const lvl = Math.min(4, Math.max(1, level)) as PlusMinusLevel;
-    return plusMinusQuestions(op, lvl, mode);
+    if (lvl === 4) return op === "+" ? hcLevel1(mode) : hcLevel2(mode);
+    return plusMinusQuestions(op, lvl as 1 | 2 | 3, mode);
   }
   const lvl = Math.min(3, Math.max(1, level)) as TimesDivLevel;
   if (lvl === 1) return memoryQuestions(op, [1, 2, 3, 4, 5]);
@@ -243,4 +313,9 @@ export function generateQuestions(
 /** Whether this op+level uses the memory (hafalan) flow. */
 export function isMemoryLevel(op: Op, level: number): boolean {
   return (op === "x" || op === "/") && (level === 1 || level === 2);
+}
+
+/** Whether this op+level is a HC (multi-operand) round. */
+export function isHcLevel(op: Op, level: number): boolean {
+  return (op === "+" || op === "-") && level === 4;
 }
