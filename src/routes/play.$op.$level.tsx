@@ -303,6 +303,19 @@ function PlayRoute() {
             </div>
           </div>
 
+          <div className="mt-4 text-sm min-h-[1.5rem]">
+            {saveStatus === "saving" && <span className="text-muted-foreground">💾 Menyimpan skor…</span>}
+            {saveStatus === "saved" && <span className="text-emerald-600 font-semibold">✅ Skor tersimpan di Ranking</span>}
+            {saveStatus === "error" && (
+              <span className="text-rose-600">
+                ⚠ Gagal menyimpan skor.{" "}
+                <button onClick={resave} className="underline font-semibold">Coba simpan ulang</button>
+              </span>
+            )}
+          </div>
+
+
+
           <div className="mt-6 flex gap-3 justify-center flex-wrap">
             <button
               onClick={() => { setStage("setup"); setMode(isMemory ? "choices" : null); }}
