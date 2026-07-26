@@ -35,8 +35,8 @@ export async function getRankings(): Promise<RankEntry[]> {
   }));
 }
 
-export async function addRanking(entry: RankEntry) {
-  const { error } = await supabase.from("rankings").insert({
+async function insertOnce(entry: RankEntry) {
+  return supabase.from("rankings").insert({
     name: entry.name,
     age: entry.age,
     op: entry.op,
@@ -46,8 +46,15 @@ export async function addRanking(entry: RankEntry) {
     total: entry.total,
     seconds: entry.seconds,
   });
+}
+
+export async function addRanking(entry: RankEntry) {
+  let { error } = await insertOnce(entry);
   if (error) {
-    console.warn("addRanking failed", error, entry);
+    console.warn("addRanking failed, retrying", error, entry);
+    await new Promise((r) => setTimeout(r, 800));
+    ({ error } = await insertOnce(entry));
+    if (error) console.warn("addRanking retry failed", error, entry);
   }
   return { error };
 }
