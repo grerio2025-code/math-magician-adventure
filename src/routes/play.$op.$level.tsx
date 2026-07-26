@@ -113,14 +113,14 @@ function PlayRoute() {
     const ok = val === current.answer;
     if (ok) setScore((s) => s + 1);
     setFeedback(ok ? "correct" : "wrong");
-    setTimeout(() => {
+    setTimeout(async () => {
       setFeedback(null);
       setInput("");
       if (index + 1 >= questions.length) {
         const total = questions.length;
         const seconds = Math.floor((Date.now() - startRef.current) / 1000);
         setElapsed(seconds);
-        addRanking({
+        await addRanking({
           name: name.trim(),
           age: parseInt(age, 10) || 0,
           op: op as RankOp,
