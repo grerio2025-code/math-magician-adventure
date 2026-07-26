@@ -365,8 +365,8 @@ function PlayRoute() {
                 </div>
               )}
               <div className="text-xs uppercase tracking-widest opacity-80">Soal {index + 1}</div>
-              <div className="font-display text-5xl md:text-7xl font-bold mt-2 drop-shadow">
-                {current.a} {opSymbol(current.op)} {current.b} = ?
+              <div className="font-display text-4xl md:text-6xl font-bold mt-2 drop-shadow break-words">
+                {current.display ?? `${current.a} ${opSymbol(current.op)} ${current.b}`} = ?
               </div>
             </div>
 
