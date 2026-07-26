@@ -159,9 +159,13 @@ function PlayRoute() {
             style={{ background: gradient }}
           >
             <h1 className="font-display text-4xl font-bold drop-shadow">
-              {sym} Level {lvl}
+              {(op === "+" || op === "-") && lvl === 4
+                ? `HC Level ${op === "+" ? 1 : 2}`
+                : `${sym} Level ${lvl}`}
             </h1>
-            <p className="opacity-90">{opWord} — 50 soal seru</p>
+            <p className="opacity-90">
+              {(op === "+" || op === "-") && lvl === 4 ? "Lomba Hitung Cepat" : opWord} — 50 soal seru
+            </p>
             {isMemory && (
               <p className="opacity-90 text-sm mt-1">Mode Hafalan: lihat & ingat, lalu pilih jawabannya!</p>
             )}
