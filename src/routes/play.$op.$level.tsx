@@ -113,14 +113,14 @@ function PlayRoute() {
     const ok = val === current.answer;
     if (ok) setScore((s) => s + 1);
     setFeedback(ok ? "correct" : "wrong");
-    setTimeout(() => {
+    setTimeout(async () => {
       setFeedback(null);
       setInput("");
       if (index + 1 >= questions.length) {
         const total = questions.length;
         const seconds = Math.floor((Date.now() - startRef.current) / 1000);
         setElapsed(seconds);
-        addRanking({
+        await addRanking({
           name: name.trim(),
           age: parseInt(age, 10) || 0,
           op: op as RankOp,
@@ -159,9 +159,13 @@ function PlayRoute() {
             style={{ background: gradient }}
           >
             <h1 className="font-display text-4xl font-bold drop-shadow">
-              {sym} Level {lvl}
+              {(op === "+" || op === "-") && lvl === 4
+                ? `HC Level ${op === "+" ? 1 : 2}`
+                : `${sym} Level ${lvl}`}
             </h1>
-            <p className="opacity-90">{opWord} — 50 soal seru</p>
+            <p className="opacity-90">
+              {(op === "+" || op === "-") && lvl === 4 ? "Lomba Hitung Cepat" : opWord} — 50 soal seru
+            </p>
             {isMemory && (
               <p className="opacity-90 text-sm mt-1">Mode Hafalan: lihat & ingat, lalu pilih jawabannya!</p>
             )}
@@ -361,8 +365,8 @@ function PlayRoute() {
                 </div>
               )}
               <div className="text-xs uppercase tracking-widest opacity-80">Soal {index + 1}</div>
-              <div className="font-display text-5xl md:text-7xl font-bold mt-2 drop-shadow">
-                {current.a} {opSymbol(current.op)} {current.b} = ?
+              <div className="font-display text-4xl md:text-6xl font-bold mt-2 drop-shadow break-words">
+                {current.display ?? `${current.a} ${opSymbol(current.op)} ${current.b}`} = ?
               </div>
             </div>
 
