@@ -21,13 +21,13 @@ const plusBtns: LevelBtn[] = [
   { op: "plus", level: 1, label: "+ Level 1", sub: "1 digit dasar" },
   { op: "plus", level: 2, label: "+ Level 2", sub: "2 digit seru" },
   { op: "plus", level: 3, label: "+ Level 3", sub: "3 digit jagoan" },
-  { op: "plus", level: 4, label: "+ Level 4", sub: "4 digit master" },
+  { op: "plus", level: 4, label: "HC Level 1", sub: "Lomba Hitung Cepat" },
 ];
 const minusBtns: LevelBtn[] = [
   { op: "minus", level: 1, label: "- Level 1", sub: "1 digit dasar" },
   { op: "minus", level: 2, label: "- Level 2", sub: "2 digit seru" },
   { op: "minus", level: 3, label: "- Level 3", sub: "3 digit jagoan" },
-  { op: "minus", level: 4, label: "- Level 4", sub: "4 digit master" },
+  { op: "minus", level: 4, label: "HC Level 2", sub: "Lomba Hitung Cepat" },
 ];
 const timesBtns: LevelBtn[] = [
   { op: "times", level: 1, label: "× Level 1", sub: "Hafal 1–5" },
