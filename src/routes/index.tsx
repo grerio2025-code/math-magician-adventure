@@ -41,14 +41,16 @@ const divideBtns: LevelBtn[] = [
 ];
 
 function LevelButton({ btn }: { btn: LevelBtn }) {
-  const bg =
-    btn.op === "plus"
-      ? "var(--gradient-plus)"
-      : btn.op === "minus"
-      ? "var(--gradient-minus)"
-      : btn.op === "times"
-      ? "linear-gradient(135deg, #6366f1, #a855f7)"
-      : "linear-gradient(135deg, #0ea5e9, #14b8a6)";
+  const isHC = (btn.op === "plus" || btn.op === "minus") && btn.level === 4;
+  const bg = isHC
+    ? "linear-gradient(135deg, #4b5563, #1f2937)"
+    : btn.op === "plus"
+    ? "var(--gradient-plus)"
+    : btn.op === "minus"
+    ? "var(--gradient-minus)"
+    : btn.op === "times"
+    ? "linear-gradient(135deg, #6366f1, #a855f7)"
+    : "linear-gradient(135deg, #0ea5e9, #14b8a6)";
   return (
     <Link
       to="/play/$op/$level"
@@ -61,6 +63,30 @@ function LevelButton({ btn }: { btn: LevelBtn }) {
     </Link>
   );
 }
+
+async function shareApp() {
+  const url = typeof window !== "undefined" ? window.location.origin : "";
+  const data = {
+    title: "Go-Q",
+    text: "Yuk main Go-Q — asah kemampuan berhitung dengan seru!",
+    url,
+  };
+  try {
+    if (typeof navigator !== "undefined" && (navigator as any).share) {
+      await (navigator as any).share(data);
+      return;
+    }
+  } catch {
+    // user cancelled or share failed — fall through to clipboard
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    alert("Link Go-Q disalin ke clipboard!");
+  } catch {
+    alert(url);
+  }
+}
+
 
 function Home() {
   return (
