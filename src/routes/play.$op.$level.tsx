@@ -171,13 +171,13 @@ function PlayRoute() {
     const scoreTxt = f ? `${f.score}/${questions.length}` : "";
     const timeTxt = f ? `${Math.floor(f.seconds / 60)}m ${f.seconds % 60}s` : "";
     const text = `🎉 ${name.trim()} main Go-Q ${titleLabel} — skor ${scoreTxt} dalam ${timeTxt}, ${medal ? `dapat medali ${medalLabel}` : "belum medali"}! Coba juga:`;
-    try {
-      if (typeof navigator !== "undefined" && (navigator as any).share) {
+    if (typeof navigator !== "undefined" && typeof (navigator as any).share === "function") {
+      try {
         await (navigator as any).share({ title: "Go-Q", text, url });
-        return;
+      } catch {
+        // user cancelled or share failed — do not fall back
       }
-    } catch {
-      // ignored
+      return;
     }
     try {
       await navigator.clipboard.writeText(`${text} ${url}`);
