@@ -358,6 +358,12 @@ function PlayRoute() {
             >
               🏆 Ranking
             </button>
+            <button
+              onClick={shareResult}
+              className="btn-pop rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 px-6 py-3 font-display text-lg text-white shadow-md"
+            >
+              📤 Bagikan
+            </button>
             <Link to="/" className="btn-pop rounded-2xl bg-secondary px-6 py-3 font-display text-lg text-secondary-foreground shadow-md">
               Home
             </Link>
