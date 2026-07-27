@@ -71,13 +71,13 @@ async function shareApp() {
     text: "Yuk main Go-Q — asah kemampuan berhitung dengan seru!",
     url,
   };
-  try {
-    if (typeof navigator !== "undefined" && (navigator as any).share) {
+  if (typeof navigator !== "undefined" && typeof (navigator as any).share === "function") {
+    try {
       await (navigator as any).share(data);
-      return;
+    } catch {
+      // user cancelled or share failed — do not fall back
     }
-  } catch {
-    // user cancelled or share failed — fall through to clipboard
+    return;
   }
   try {
     await navigator.clipboard.writeText(url);
