@@ -159,6 +159,35 @@ function PlayRoute() {
     void persistScore(f.score, f.seconds);
   };
 
+  const shareResult = async () => {
+    const f = finalRef.current;
+    const url = typeof window !== "undefined" ? window.location.origin : "";
+    const titleLabel =
+      (op === "+" || op === "-") && lvl === 4
+        ? `HC Level ${op === "+" ? 1 : 2}`
+        : `${sym} Level ${lvl}`;
+    const medal = f ? getMedal(lvl, f.score, f.seconds) : null;
+    const medalLabel = medalInfo(medal).label;
+    const scoreTxt = f ? `${f.score}/${questions.length}` : "";
+    const timeTxt = f ? `${Math.floor(f.seconds / 60)}m ${f.seconds % 60}s` : "";
+    const text = `🎉 ${name.trim()} main Go-Q ${titleLabel} — skor ${scoreTxt} dalam ${timeTxt}, ${medal ? `dapat medali ${medalLabel}` : "belum medali"}! Coba juga:`;
+    try {
+      if (typeof navigator !== "undefined" && (navigator as any).share) {
+        await (navigator as any).share({ title: "Go-Q", text, url });
+        return;
+      }
+    } catch {
+      // ignored
+    }
+    try {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      alert("Hasil disalin ke clipboard!");
+    } catch {
+      alert(`${text} ${url}`);
+    }
+  };
+
+
   const gradient = opGradient(op);
   const opWord = opWordOf(op);
   const sym = opSymbol(op);
@@ -328,6 +357,12 @@ function PlayRoute() {
               className="btn-pop rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-500 px-6 py-3 font-display text-lg text-white shadow-md"
             >
               🏆 Ranking
+            </button>
+            <button
+              onClick={shareResult}
+              className="btn-pop rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 px-6 py-3 font-display text-lg text-white shadow-md"
+            >
+              📤 Bagikan
             </button>
             <Link to="/" className="btn-pop rounded-2xl bg-secondary px-6 py-3 font-display text-lg text-secondary-foreground shadow-md">
               Home
