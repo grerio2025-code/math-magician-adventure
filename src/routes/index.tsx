@@ -131,14 +131,22 @@ function Home() {
           </section>
         </div>
 
-        <div className="mt-10 text-center">
+        <div className="mt-10 flex flex-wrap justify-center gap-3">
           <Link
             to="/ranking"
             className="btn-pop inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-8 py-4 font-display text-xl font-bold text-white shadow-[var(--shadow-fun)] border-4 border-white/70"
           >
             🏆 Ranking
           </Link>
+          <button
+            type="button"
+            onClick={shareApp}
+            className="btn-pop inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 px-8 py-4 font-display text-xl font-bold text-white shadow-[var(--shadow-fun)] border-4 border-white/70"
+          >
+            📤 Bagikan
+          </button>
         </div>
+
       </div>
     </div>
   );
