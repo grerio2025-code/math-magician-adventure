@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as RankingRouteImport } from './routes/ranking'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlayOpLevelRouteImport } from './routes/play.$op.$level'
+import { Route as ApiPublicMirrorBackfillRouteImport } from './routes/api/public/mirror-backfill'
 
 const RankingRoute = RankingRouteImport.update({
   id: '/ranking',
@@ -28,34 +29,52 @@ const PlayOpLevelRoute = PlayOpLevelRouteImport.update({
   path: '/play/$op/$level',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMirrorBackfillRoute = ApiPublicMirrorBackfillRouteImport.update({
+  id: '/api/public/mirror-backfill',
+  path: '/api/public/mirror-backfill',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ranking': typeof RankingRoute
+  '/api/public/mirror-backfill': typeof ApiPublicMirrorBackfillRoute
   '/play/$op/$level': typeof PlayOpLevelRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ranking': typeof RankingRoute
+  '/api/public/mirror-backfill': typeof ApiPublicMirrorBackfillRoute
   '/play/$op/$level': typeof PlayOpLevelRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/ranking': typeof RankingRoute
+  '/api/public/mirror-backfill': typeof ApiPublicMirrorBackfillRoute
   '/play/$op/$level': typeof PlayOpLevelRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/ranking' | '/play/$op/$level'
+  fullPaths:
+    | '/'
+    | '/ranking'
+    | '/api/public/mirror-backfill'
+    | '/play/$op/$level'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ranking' | '/play/$op/$level'
-  id: '__root__' | '/' | '/ranking' | '/play/$op/$level'
+  to: '/' | '/ranking' | '/api/public/mirror-backfill' | '/play/$op/$level'
+  id:
+    | '__root__'
+    | '/'
+    | '/ranking'
+    | '/api/public/mirror-backfill'
+    | '/play/$op/$level'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   RankingRoute: typeof RankingRoute
+  ApiPublicMirrorBackfillRoute: typeof ApiPublicMirrorBackfillRoute
   PlayOpLevelRoute: typeof PlayOpLevelRoute
 }
 
@@ -82,12 +101,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlayOpLevelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/mirror-backfill': {
+      id: '/api/public/mirror-backfill'
+      path: '/api/public/mirror-backfill'
+      fullPath: '/api/public/mirror-backfill'
+      preLoaderRoute: typeof ApiPublicMirrorBackfillRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   RankingRoute: RankingRoute,
+  ApiPublicMirrorBackfillRoute: ApiPublicMirrorBackfillRoute,
   PlayOpLevelRoute: PlayOpLevelRoute,
 }
 export const routeTree = rootRouteImport

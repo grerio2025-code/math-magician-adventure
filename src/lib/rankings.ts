@@ -56,8 +56,29 @@ export async function addRanking(entry: RankEntry) {
     ({ error } = await insertOnce(entry));
     if (error) console.warn("addRanking retry failed", error, entry);
   }
+  // Fire-and-forget copy to the owner's own Supabase project.
+  void (async () => {
+    try {
+      const { mirrorRanking } = await import("@/lib/mirror.functions");
+      await mirrorRanking({
+        data: {
+          name: entry.name,
+          age: entry.age,
+          op: entry.op,
+          level: entry.level,
+          mode: entry.mode,
+          score: entry.score,
+          total: entry.total,
+          seconds: entry.seconds,
+        },
+      });
+    } catch (e) {
+      console.warn("mirrorRanking failed", e);
+    }
+  })();
   return { error };
 }
+
 
 export function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
