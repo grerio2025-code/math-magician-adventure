@@ -1,20 +1,26 @@
-## Perubahan
+# Salinan Ranking ke Supabase Pribadi Anda
 
-### 1) HC Level 1 & 2 berwarna abu-abu tua
-`src/routes/index.tsx`: tombol level 4 untuk `+` dan `-` (HC Level 1 & 2) diberi gradient abu-abu tua (mis. `linear-gradient(135deg, #4b5563, #1f2937)` — slate-700 → slate-900) sebagai override khusus, sementara level 1-3 tetap pakai gradient plus/minus. Posisi tombol tidak diubah.
+Database ranking proyek ini tetap berada di Lovable Cloud (tidak bisa dipindahkan keluar). Yang dibuat: setiap skor baru yang tersimpan juga dikirim sebagai salinan ke project Supabase milik Anda, jadi Anda punya data lengkap di akun sendiri.
 
-### 2) Tombol Share di halaman depan
-`src/routes/index.tsx`: di samping tombol "🏆 Ranking" (bagian bawah home), tambah tombol "📤 Bagikan". Fungsi:
-- Coba `navigator.share({ title: "Go-Q", text: "Yuk main Go-Q — asah berhitung!", url: window.location.origin })`.
-- Fallback: `navigator.clipboard.writeText(url)` + toast kecil "Link disalin!".
+## Yang Anda perlu siapkan
 
-### 3) Tombol Share di layar hasil (summary)
-`src/routes/play.$op.$level.tsx` stage `done`: tombol "📤 Bagikan" di baris tombol Main Lagi / Ranking / Home. Teks share menyertakan nama, level, skor, waktu, dan medali:
-> "🎉 [Nama] main Go-Q [judul level] — skor [x]/50 dalam [waktu], dapat [medali]! Coba juga: [url]"
-Fallback clipboard sama seperti di home.
+1. Di project Supabase Anda, buat tabel `rankings` dengan kolom: `name` (text), `age` (int), `op` (text), `level` (int), `mode` (text), `score` (int), `total` (int), `seconds` (int), `created_at` (timestamptz default now()), plus `id` (uuid default gen_random_uuid()).
+2. Beri saya dua nilai untuk disimpan sebagai rahasia proyek:
+   - URL project Supabase Anda
+   - Service role key (atau secret key) project Anda — dipakai hanya di sisi server, tidak pernah tampil di browser
 
-### File yang berubah
-- `src/routes/index.tsx` — warna tombol HC + tombol Share.
-- `src/routes/play.$op.$level.tsx` — tombol Share di summary.
+## Yang akan dibangun
 
-Tidak ada perubahan database atau logika permainan.
+### 1. Pengiriman salinan di sisi server
+`src/lib/mirror.functions.ts` — server function `mirrorRanking` menerima satu baris ranking, lalu menulisnya ke Supabase Anda memakai kredensial dari rahasia proyek. Jika kredensial belum diisi, fungsi berhenti diam-diam tanpa mengganggu permainan.
+
+### 2. Panggilan dari alur simpan skor
+`src/lib/rankings.ts` — setelah `addRanking` berhasil menyimpan ke database proyek, panggil `mirrorRanking` secara "fire and forget". Kegagalan salinan tidak akan menampilkan error ke anak yang bermain; hanya dicatat di log.
+
+### 3. Migrasi data yang sudah ada
+Satu endpoint sekali-jalan `src/routes/api/public/mirror-backfill.ts` (dilindungi token rahasia) untuk menyalin seluruh ranking lama ke Supabase Anda, dijalankan sekali setelah kredensial masuk.
+
+## Catatan teknis
+- Salinan dikirim dari server (bukan browser) supaya kunci tidak bocor dan tidak ada masalah CORS.
+- Skema kolom dibuat identik agar data langsung bisa dipakai/di-query di project Anda.
+- Tidak ada perubahan pada logika permainan, medali, atau tampilan Ranking.
