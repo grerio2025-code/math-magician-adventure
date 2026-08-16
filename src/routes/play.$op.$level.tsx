@@ -201,31 +201,58 @@ function PlayRoute() {
   // ---------- SETUP ----------
   if (stage === "setup") {
     return (
-      <div className="min-h-screen px-4 py-8 flex items-center">
-        <div className="mx-auto w-full max-w-lg">
-          <Link to="/" className="text-sm text-foreground/70 hover:underline">← Kembali</Link>
-          <div
-            className="mt-3 rounded-3xl p-8 shadow-[var(--shadow-fun)] border-4 border-white/60 text-white"
-            style={{ background: gradient }}
+      <div className="min-h-screen px-4 py-8 flex items-center" style={{ background: "var(--gradient-sky)" }}>
+        <div className="mx-auto w-full max-w-3xl">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 rounded-full bg-card/80 px-4 py-2 text-sm font-semibold text-foreground/80 shadow-[var(--shadow-soft)] hover:bg-card"
           >
-            <h1 className="font-display text-4xl font-bold drop-shadow">
-              {(op === "+" || op === "-") && lvl === 4
-                ? `HC Level ${op === "+" ? 1 : 2}`
-                : `${sym} Level ${lvl}`}
-            </h1>
-            <p className="opacity-90">
-              {(op === "+" || op === "-") && lvl === 4 ? "Lomba Hitung Cepat" : opWord} — 50 soal seru
-            </p>
-            {isMemory && (
-              <p className="opacity-90 text-sm mt-1">Mode Hafalan: lihat & ingat, lalu pilih jawabannya!</p>
-            )}
+            <span className="grid size-6 place-items-center rounded-full bg-primary text-primary-foreground">←</span>
+            Kembali
+          </Link>
+
+          <div className="mt-4 rounded-[2rem] bg-card/60 p-2 shadow-[var(--shadow-soft)]">
+            <div
+              className="rounded-[1.7rem] px-6 py-7 sm:px-10 text-white flex items-center justify-between gap-4"
+              style={{ background: gradient }}
+            >
+              <span className="hidden sm:block text-5xl drop-shadow">🧮</span>
+              <div className="flex-1 text-center sm:text-left">
+                <h1 className="font-display text-3xl sm:text-4xl font-bold drop-shadow">
+                  {(op === "+" || op === "-") && lvl === 4
+                    ? `HC Level ${op === "+" ? 1 : 2}`
+                    : `${opWord} — Level ${lvl}`}
+                </h1>
+                <p className="opacity-90 text-sm sm:text-base mt-1">
+                  {(op === "+" || op === "-") && lvl === 4
+                    ? "Lomba Hitung Cepat — 50 soal seru!"
+                    : "50 soal seru untuk menguji kemampuanmu!"}
+                </p>
+                {isMemory && (
+                  <p className="opacity-90 text-xs sm:text-sm mt-1">
+                    Mode Hafalan: lihat &amp; ingat, lalu pilih jawabannya!
+                  </p>
+                )}
+                <div className="mt-3 h-2 w-40 mx-auto sm:mx-0 rounded-full bg-white/30 overflow-hidden">
+                  <div className="h-full w-1/3 rounded-full bg-white/80" />
+                </div>
+              </div>
+              <span className="hidden sm:block text-5xl drop-shadow">🏆</span>
+            </div>
           </div>
 
-          <div className="mt-6 rounded-3xl bg-card p-6 shadow-[var(--shadow-fun)] border-2 border-border">
+          <div className="mt-6 relative overflow-hidden rounded-[2rem] bg-card p-6 sm:p-8 pt-10 shadow-[var(--shadow-soft)] border-2 border-white/70">
+            <div className="pointer-events-none absolute -top-16 -left-16 size-48 rounded-full bg-primary/20 blur-2xl" />
+            <div className="pointer-events-none absolute -bottom-20 -right-16 size-56 rounded-full bg-accent/20 blur-2xl" />
+
             {!isMemory && !mode ? (
-              <>
-                <h2 className="font-display text-2xl mb-4 text-center">Pilih Mode Bermain</h2>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="relative">
+                <div className="flex justify-center">
+                  <h2 className="rounded-2xl px-6 py-3 font-display text-xl sm:text-2xl text-white shadow-[var(--shadow-fun)] bg-gradient-to-r from-primary via-accent to-secondary">
+                    🎮 Pilih Mode Bermain ✨
+                  </h2>
+                </div>
+                <div className="mt-6 grid grid-cols-2 gap-3">
                   <button
                     onClick={() => setMode("blind")}
                     className="btn-pop rounded-2xl p-6 bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-display text-xl shadow-md"
@@ -241,55 +268,85 @@ function PlayRoute() {
                     <div className="text-xs font-sans opacity-90 mt-1">Pilih dari 3 jawaban</div>
                   </button>
                 </div>
-              </>
+              </div>
             ) : (
-              <>
-                <h2 className="font-display text-2xl mb-4 text-center">Kenalan Dulu Yuk!</h2>
-                <label className="block mb-3">
-                  <span className="text-sm font-semibold">Nama</span>
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Nama kamu"
-                    className="mt-1 w-full rounded-xl border-2 border-border bg-input px-4 py-3 focus:outline-none focus:border-primary"
-                  />
-                </label>
-                <label className="block mb-4">
-                  <span className="text-sm font-semibold">Usia</span>
-                  <input
-                    type="number"
-                    min={3}
-                    max={99}
-                    value={age}
-                    onChange={(e) => setAge(e.target.value)}
-                    placeholder="Umur kamu"
-                    className="mt-1 w-full rounded-xl border-2 border-border bg-input px-4 py-3 focus:outline-none focus:border-primary"
-                  />
-                </label>
-                {!isMemory && (
-                  <div className="text-center text-sm text-muted-foreground mb-3">
-                    Mode: <b>{mode === "blind" ? "🙈 Blind" : "🎯 Choices"}</b>{" "}
-                    <button onClick={() => setMode(null)} className="underline text-primary">ubah</button>
+              <div className="relative">
+                <div className="flex justify-center">
+                  <h2 className="rounded-2xl px-6 py-3 font-display text-xl sm:text-2xl text-white shadow-[var(--shadow-fun)] bg-gradient-to-r from-primary via-accent to-secondary">
+                    🚀 Kenalan Dulu Yuk! ✨
+                  </h2>
+                </div>
+
+                <div className="mt-6 space-y-5">
+                  <label className="block">
+                    <span className="flex items-center gap-2 font-display text-lg">
+                      <span className="grid size-9 place-items-center rounded-full bg-primary/15 text-lg">🧑</span>
+                      Nama
+                    </span>
+                    <input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Nama kamu"
+                      className="mt-2 w-full rounded-full border-2 border-border bg-input px-5 py-3.5 focus:outline-none focus:border-primary"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="flex items-center gap-2 font-display text-lg">
+                      <span className="grid size-9 place-items-center rounded-full bg-accent/20 text-lg">🎂</span>
+                      Usia
+                    </span>
+                    <input
+                      type="number"
+                      min={3}
+                      max={99}
+                      value={age}
+                      onChange={(e) => setAge(e.target.value)}
+                      placeholder="Umur kamu"
+                      className="mt-2 w-full rounded-full border-2 border-border bg-input px-5 py-3.5 focus:outline-none focus:border-primary"
+                    />
+                  </label>
+                </div>
+
+                <div className="mt-6 flex justify-center">
+                  <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-2">
+                    <span className="px-2 text-sm font-semibold text-muted-foreground">⚙️ Mode:</span>
+                    {isMemory ? (
+                      <span className="rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">
+                        🧠 Hafalan
+                      </span>
+                    ) : (
+                      (["choices", "blind"] as const).map((m) => (
+                        <button
+                          key={m}
+                          onClick={() => setMode(m)}
+                          className={`rounded-full px-4 py-2 text-sm font-bold transition ${
+                            mode === m
+                              ? "bg-primary text-primary-foreground shadow-md"
+                              : "text-foreground/70 hover:bg-card"
+                          }`}
+                        >
+                          {mode === m ? "✅ " : "◯ "}
+                          {m === "choices" ? "Choices" : "Blind"}
+                        </button>
+                      ))
+                    )}
                   </div>
-                )}
-                {isMemory && (
-                  <div className="text-center text-sm text-muted-foreground mb-3">
-                    Mode: <b>🧠 Hafalan</b>
-                  </div>
-                )}
+                </div>
+
                 <button
                   onClick={start}
                   disabled={!name.trim() || !age.trim()}
-                  className="btn-pop w-full rounded-2xl py-4 font-display text-xl font-bold text-white shadow-md disabled:opacity-50"
+                  className="btn-pop mt-6 w-full rounded-full py-4 font-display text-2xl font-bold text-white shadow-[var(--shadow-fun)] disabled:opacity-50 flex items-center justify-center gap-3"
                   style={{ background: gradient }}
                 >
-                  🚀 Mulai!
+                  🚀 Mulai! <span className="text-xl">›</span>
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>
       </div>
+
     );
   }
 
