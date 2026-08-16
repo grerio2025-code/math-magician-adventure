@@ -171,45 +171,42 @@ async function shareApp() {
 
 function Home() {
   return (
-    <div className="min-h-screen px-4 py-8 md:py-12">
-      <div className="mx-auto max-w-6xl">
-        <header className="text-center mb-8 md:mb-12">
+    <div className="relative min-h-screen overflow-hidden px-4 py-8 md:py-12">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-4 right-2 select-none font-display text-6xl md:text-8xl font-bold opacity-10"
+        style={{ color: "var(--primary)" }}
+      >
+        2 4 ＋ ✕ 3 － ÷ 5
+      </div>
+
+      <div className="relative mx-auto max-w-6xl">
+        <header className="text-center mb-8 md:mb-10">
           <div className="inline-block animate-pop">
             <h1 className="font-display text-6xl md:text-8xl font-bold bg-gradient-to-r from-fuchsia-500 via-orange-400 to-emerald-500 bg-clip-text text-transparent drop-shadow-sm">
               Go-Q
             </h1>
           </div>
-          <p className="mt-3 text-base md:text-xl text-foreground/80 font-semibold">
+          <p className="mt-3 font-display text-xl md:text-3xl font-bold text-foreground">
             Go Count and Memorize Numbers with Q
           </p>
-          <p className="text-sm text-muted-foreground mt-1">untuk Ananda Quddus MIN 5 Ulee Kareng - Banda Aceh</p>
+          <p className="mt-1 text-sm md:text-lg text-muted-foreground font-semibold">
+            Belajar Hitung • Latih Ingatan • Raih Prestasi
+          </p>
+          <div
+            className="mx-auto mt-3 h-1.5 w-40 rounded-full"
+            style={{ background: "linear-gradient(90deg, var(--op-times), var(--op-minus), var(--op-plus))" }}
+          />
+          <p className="text-xs text-muted-foreground mt-3">
+            untuk Ananda Quddus MIN 5 Ulee Kareng - Banda Aceh
+          </p>
         </header>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          <section>
-            <h2 className="font-display text-base sm:text-2xl mb-3 text-center text-emerald-700 whitespace-nowrap">Penjumlahan ➕</h2>
-            <div className="grid gap-3">
-              {plusBtns.map((b) => <LevelButton key={b.label} btn={b} />)}
-            </div>
-          </section>
-          <section>
-            <h2 className="font-display text-base sm:text-2xl mb-3 text-center text-orange-700 whitespace-nowrap">Pengurangan ➖</h2>
-            <div className="grid gap-3">
-              {minusBtns.map((b) => <LevelButton key={b.label} btn={b} />)}
-            </div>
-          </section>
-          <section>
-            <h2 className="font-display text-base sm:text-2xl mb-3 text-center text-indigo-700 whitespace-nowrap">Perkalian ✖</h2>
-            <div className="grid gap-3">
-              {timesBtns.map((b) => <LevelButton key={b.label} btn={b} />)}
-            </div>
-          </section>
-          <section>
-            <h2 className="font-display text-base sm:text-2xl mb-3 text-center text-cyan-700 whitespace-nowrap">Pembagian ➗</h2>
-            <div className="grid gap-3">
-              {divideBtns.map((b) => <LevelButton key={b.label} btn={b} />)}
-            </div>
-          </section>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <OpCard op="plus" items={plusBtns} />
+          <OpCard op="minus" items={minusBtns} />
+          <OpCard op="times" items={timesBtns} />
+          <OpCard op="divide" items={divideBtns} />
         </div>
 
         <div className="mt-10 flex flex-wrap justify-center gap-3">
@@ -227,6 +224,18 @@ function Home() {
             📤 Bagikan
           </button>
         </div>
+
+        <div
+          className="mx-auto mt-6 flex max-w-2xl flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-full border-4 border-white/70 px-6 py-3 text-sm font-semibold text-foreground/80"
+          style={{ background: "oklch(1 0 0 / 0.75)", boxShadow: "var(--shadow-soft)" }}
+        >
+          <span>🧠 Melatih Fokus</span>
+          <span className="hidden sm:inline text-muted-foreground">|</span>
+          <span>📈 Meningkatkan Daya Ingat</span>
+          <span className="hidden sm:inline text-muted-foreground">|</span>
+          <span>⭐ Menuju Generasi Cerdas</span>
+        </div>
+
 
       </div>
     </div>
