@@ -59,11 +59,23 @@
   --input: oklch(0.95 0.02 280);
   --ring: oklch(0.65 0.22 300);
 
-  --gradient-sky: linear-gradient(135deg, oklch(0.9 0.12 220), oklch(0.88 0.14 320), oklch(0.92 0.14 60));
+  --gradient-sky: linear-gradient(135deg, oklch(0.95 0.05 235) 0%, oklch(0.94 0.06 300) 45%, oklch(0.93 0.07 330) 70%, oklch(0.9 0.1 45) 100%);
   --gradient-plus: linear-gradient(135deg, oklch(0.78 0.2 155), oklch(0.72 0.22 180));
   --gradient-minus: linear-gradient(135deg, oklch(0.78 0.22 35), oklch(0.72 0.24 15));
   --shadow-fun: 0 8px 0 0 oklch(0.3 0.1 280 / 0.15), 0 12px 24px -8px oklch(0.3 0.1 280 / 0.2);
+  --shadow-soft: 0 10px 30px -12px oklch(0.35 0.1 285 / 0.25);
+
+  --op-plus: oklch(0.62 0.18 150);
+  --op-minus: oklch(0.66 0.21 45);
+  --op-times: oklch(0.5 0.22 295);
+  --op-divide: oklch(0.6 0.13 210);
+  --gradient-op-plus: linear-gradient(135deg, oklch(0.66 0.19 150), oklch(0.55 0.17 160));
+  --gradient-op-minus: linear-gradient(135deg, oklch(0.72 0.2 60), oklch(0.63 0.22 35));
+  --gradient-op-times: linear-gradient(135deg, oklch(0.55 0.23 300), oklch(0.45 0.22 285));
+  --gradient-op-divide: linear-gradient(135deg, oklch(0.62 0.13 215), oklch(0.58 0.13 195));
+  --gradient-op-hc: linear-gradient(135deg, oklch(0.45 0.03 285), oklch(0.32 0.03 285));
 }
+
 
 @layer base {
   * { border-color: var(--color-border); }
