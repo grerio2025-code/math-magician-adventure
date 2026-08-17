@@ -236,7 +236,14 @@ function Home() {
           <span>⭐ Menuju Generasi Cerdas</span>
         </div>
 
-
+        <div className="mt-4 text-center">
+          <Link
+            to="/privacy-policy"
+            className="text-xs md:text-sm text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
+          >
+            Kebijakan Privasi
+          </Link>
+        </div>
       </div>
     </div>
   );
