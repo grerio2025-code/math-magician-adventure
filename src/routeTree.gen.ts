@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RankingRouteImport } from './routes/ranking'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlayOpLevelRouteImport } from './routes/play.$op.$level'
 import { Route as ApiPublicMirrorBackfillRouteImport } from './routes/api/public/mirror-backfill'
@@ -17,6 +18,11 @@ import { Route as ApiPublicMirrorBackfillRouteImport } from './routes/api/public
 const RankingRoute = RankingRouteImport.update({
   id: '/ranking',
   path: '/ranking',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -37,12 +43,14 @@ const ApiPublicMirrorBackfillRoute = ApiPublicMirrorBackfillRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/ranking': typeof RankingRoute
   '/api/public/mirror-backfill': typeof ApiPublicMirrorBackfillRoute
   '/play/$op/$level': typeof PlayOpLevelRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/ranking': typeof RankingRoute
   '/api/public/mirror-backfill': typeof ApiPublicMirrorBackfillRoute
   '/play/$op/$level': typeof PlayOpLevelRoute
@@ -50,6 +58,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/ranking': typeof RankingRoute
   '/api/public/mirror-backfill': typeof ApiPublicMirrorBackfillRoute
   '/play/$op/$level': typeof PlayOpLevelRoute
@@ -58,14 +67,21 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/privacy-policy'
     | '/ranking'
     | '/api/public/mirror-backfill'
     | '/play/$op/$level'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ranking' | '/api/public/mirror-backfill' | '/play/$op/$level'
+  to:
+    | '/'
+    | '/privacy-policy'
+    | '/ranking'
+    | '/api/public/mirror-backfill'
+    | '/play/$op/$level'
   id:
     | '__root__'
     | '/'
+    | '/privacy-policy'
     | '/ranking'
     | '/api/public/mirror-backfill'
     | '/play/$op/$level'
@@ -73,6 +89,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   RankingRoute: typeof RankingRoute
   ApiPublicMirrorBackfillRoute: typeof ApiPublicMirrorBackfillRoute
   PlayOpLevelRoute: typeof PlayOpLevelRoute
@@ -85,6 +102,13 @@ declare module '@tanstack/react-router' {
       path: '/ranking'
       fullPath: '/ranking'
       preLoaderRoute: typeof RankingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -113,6 +137,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
   RankingRoute: RankingRoute,
   ApiPublicMirrorBackfillRoute: ApiPublicMirrorBackfillRoute,
   PlayOpLevelRoute: PlayOpLevelRoute,
