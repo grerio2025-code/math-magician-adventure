@@ -94,6 +94,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         src: "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3995903122175496",
         crossOrigin: "anonymous",
       },
+      {
+        type: "text/javascript",
+        children: `(function(s){s.dataset.zone='11599940',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))`,
+      },
     ],
   }),
   shellComponent: RootShell,
