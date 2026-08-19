@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { generateQuestions, isMemoryLevel, type Mode, type Op, type Question } from "@/lib/questions";
 import { addRanking, type RankOp } from "@/lib/rankings";
 import { getMedal, medalInfo, getTargets, formatSecs } from "@/lib/medals";
+import { showAdThen } from "@/lib/ads";
+
 
 export const Route = createFileRoute("/play/$op/$level")({
   head: () => ({
