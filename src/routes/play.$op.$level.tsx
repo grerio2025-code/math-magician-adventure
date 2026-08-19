@@ -69,6 +69,18 @@ function PlayRoute() {
   const [showMemorize, setShowMemorize] = useState(false);
   const [memCountdown, setMemCountdown] = useState(0);
 
+  // iklan sebelum ranking
+  const [pendingRanking, setPendingRanking] = useState(false);
+  const rankingCancelRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    return () => {
+      if (rankingCancelRef.current) {
+        rankingCancelRef.current();
+      }
+    };
+  }, []);
+
+
   useEffect(() => {
     if (stage !== "playing") return;
     startRef.current = Date.now();
