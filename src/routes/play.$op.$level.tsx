@@ -201,6 +201,15 @@ function PlayRoute() {
     }
   };
 
+  const goToRanking = () => {
+    if (pendingRanking) return;
+    setPendingRanking(true);
+    rankingCancelRef.current = showAdThen(() => {
+      navigate({ to: "/ranking" });
+    });
+  };
+
+
 
   const gradient = opGradient(op);
   const opWord = opWordOf(op);
