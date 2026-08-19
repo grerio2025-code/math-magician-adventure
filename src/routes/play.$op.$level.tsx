@@ -433,11 +433,20 @@ function PlayRoute() {
               Main Lagi
             </button>
             <button
-              onClick={() => navigate({ to: "/ranking" })}
-              className="btn-pop rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-500 px-6 py-3 font-display text-lg text-white shadow-md"
+              onClick={goToRanking}
+              disabled={pendingRanking}
+              className="btn-pop rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-500 px-6 py-3 font-display text-lg text-white shadow-md disabled:opacity-60 flex items-center justify-center gap-2"
             >
-              🏆 Ranking
+              {pendingRanking ? (
+                <>
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Memuat iklan…
+                </>
+              ) : (
+                <>🏆 Ranking</>
+              )}
             </button>
+
             <button
               onClick={shareResult}
               className="btn-pop rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 px-6 py-3 font-display text-lg text-white shadow-md"
