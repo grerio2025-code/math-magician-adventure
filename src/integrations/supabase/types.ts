@@ -14,6 +14,184 @@ export type Database = {
   }
   public: {
     Tables: {
+      competition_participants: {
+        Row: {
+          age: number
+          answered: number
+          competition_id: string
+          country_code: string
+          created_at: string
+          finished_at: string | null
+          id: string
+          name: string
+          player_key: string
+          school: string | null
+          score: number
+          seconds: number
+          updated_at: string
+        }
+        Insert: {
+          age: number
+          answered?: number
+          competition_id: string
+          country_code?: string
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          name: string
+          player_key: string
+          school?: string | null
+          score?: number
+          seconds?: number
+          updated_at?: string
+        }
+        Update: {
+          age?: number
+          answered?: number
+          competition_id?: string
+          country_code?: string
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          name?: string
+          player_key?: string
+          school?: string | null
+          score?: number
+          seconds?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_participants_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competition_secrets: {
+        Row: {
+          competition_id: string
+          created_at: string
+          host_key: string
+          pin: string | null
+        }
+        Insert: {
+          competition_id: string
+          created_at?: string
+          host_key: string
+          pin?: string | null
+        }
+        Update: {
+          competition_id?: string
+          created_at?: string
+          host_key?: string
+          pin?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_secrets_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: true
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competitions: {
+        Row: {
+          created_at: string
+          difficulty: string
+          difficulty_custom: Json | null
+          duration_seconds: number
+          ended_at: string | null
+          has_pin: boolean
+          host_name: string | null
+          id: string
+          input_type: string
+          join_code: string
+          ops: string[]
+          question_seed: number
+          start_at: string
+          started_at: string | null
+          status: string
+          title: string
+          total_questions: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          difficulty?: string
+          difficulty_custom?: Json | null
+          duration_seconds?: number
+          ended_at?: string | null
+          has_pin?: boolean
+          host_name?: string | null
+          id?: string
+          input_type?: string
+          join_code: string
+          ops: string[]
+          question_seed: number
+          start_at: string
+          started_at?: string | null
+          status?: string
+          title: string
+          total_questions?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          difficulty?: string
+          difficulty_custom?: Json | null
+          duration_seconds?: number
+          ended_at?: string | null
+          has_pin?: boolean
+          host_name?: string | null
+          id?: string
+          input_type?: string
+          join_code?: string
+          ops?: string[]
+          question_seed?: number
+          start_at?: string
+          started_at?: string | null
+          status?: string
+          title?: string
+          total_questions?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      players: {
+        Row: {
+          age: number
+          country_code: string
+          created_at: string
+          name: string
+          player_key: string
+          school: string | null
+          updated_at: string
+        }
+        Insert: {
+          age: number
+          country_code?: string
+          created_at?: string
+          name: string
+          player_key: string
+          school?: string | null
+          updated_at?: string
+        }
+        Update: {
+          age?: number
+          country_code?: string
+          created_at?: string
+          name?: string
+          player_key?: string
+          school?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rankings: {
         Row: {
           age: number
