@@ -1,3 +1,23 @@
+/**
+ * Ad control. While a player is inside a live competition match we suppress
+ * every full-screen / interstitial / pop-up ad so nothing distracts them.
+ */
+let inCompetition = false;
+
+export function setInCompetition(active: boolean) {
+  inCompetition = active;
+  if (typeof window !== "undefined") {
+    (window as any).is_in_competition = active;
+  }
+}
+
+export function isInCompetition(): boolean {
+  if (typeof window !== "undefined" && typeof (window as any).is_in_competition === "boolean") {
+    return (window as any).is_in_competition;
+  }
+  return inCompetition;
+}
+
 export function showAdThen(callback: () => void, delayMs = 3000): () => void {
   let done = false;
   const finish = () => {
@@ -7,7 +27,8 @@ export function showAdThen(callback: () => void, delayMs = 3000): () => void {
     }
   };
 
-  if (typeof window === "undefined") {
+  if (typeof window === "undefined" || isInCompetition()) {
+    // No interstitial ads during a competition match.
     finish();
     return () => {};
   }
