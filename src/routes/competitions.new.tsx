@@ -71,7 +71,10 @@ function NewCompetition() {
     if (!title.trim()) return setError("Judul lomba wajib diisi.");
     if (!ops.length) return setError("Pilih minimal satu mode soal.");
     if (usePin && !/^\d{4}$/.test(pin)) return setError("PIN harus 4 angka.");
+    if (!captcha) return setError("Tunggu sebentar, soal captcha sedang disiapkan.");
     if (!captchaAns.trim()) return setError("Jawab dulu soal captcha ya!");
+    const startDate = startAt ? new Date(startAt) : new Date();
+    if (Number.isNaN(startDate.getTime())) return setError("Tanggal & jam mulai tidak valid.");
     setBusy(true);
     try {
       const res = await create({
@@ -79,7 +82,7 @@ function NewCompetition() {
           title: title.trim(),
           usePin,
           pin: usePin ? pin : null,
-          startAt: new Date(startAt).toISOString(),
+          startAt: startDate.toISOString(),
           ops,
           difficulty: customOn ? "custom" : difficulty,
           custom: customOn ? { min: Number(cmin), max: Number(cmax) } : null,
