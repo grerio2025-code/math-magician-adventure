@@ -255,7 +255,7 @@ function NewCompetition() {
             style={{ background: "color-mix(in oklab, var(--primary) 10%, white 90%)" }}
           >
             <label className={label} htmlFor="cap">
-              🧮 Buktikan kamu jago: berapa {captcha.a} + {captcha.b}?
+              🧮 Buktikan kamu jago: berapa {captcha ? `${captcha.a} + ${captcha.b}` : "…"}?
             </label>
             <input id="cap" inputMode="numeric" className={field} value={captchaAns} onChange={(e) => setCaptchaAns(e.target.value.replace(/[^\d-]/g, ""))} placeholder="Jawaban" />
           </div>
