@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createCompetition } from "@/lib/competitions.functions";
 import { OP_LABEL_ID, type CompOp } from "@/lib/competition-questions";
 import { saveHostKey } from "@/lib/player";
@@ -37,7 +37,7 @@ function NewCompetition() {
   const [title, setTitle] = useState("");
   const [usePin, setUsePin] = useState(false);
   const [pin, setPin] = useState("");
-  const [startAt, setStartAt] = useState(localNowPlus(10));
+  const [startAt, setStartAt] = useState("");
   const [ops, setOps] = useState<CompOp[]>(["+"]);
   const [difficulty, setDifficulty] = useState<"mudah" | "sedang" | "sulit">("mudah");
   const [customOn, setCustomOn] = useState(false);
@@ -47,10 +47,12 @@ function NewCompetition() {
   const [duration, setDuration] = useState(60);
   const [total, setTotal] = useState(50);
   const [hostName, setHostName] = useState("");
-  const captcha = useMemo(
-    () => ({ a: 1 + Math.floor(Math.random() * 9), b: 1 + Math.floor(Math.random() * 9) }),
-    [],
-  );
+  // Generated after mount so server and client markup match (no hydration mismatch).
+  const [captcha, setCaptcha] = useState<{ a: number; b: number } | null>(null);
+  useEffect(() => {
+    setCaptcha({ a: 1 + Math.floor(Math.random() * 9), b: 1 + Math.floor(Math.random() * 9) });
+    setStartAt(localNowPlus(10));
+  }, []);
   const [captchaAns, setCaptchaAns] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
