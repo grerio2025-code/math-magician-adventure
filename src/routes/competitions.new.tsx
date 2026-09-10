@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createCompetition } from "@/lib/competitions.functions";
 import { OP_LABEL_ID, type CompOp } from "@/lib/competition-questions";
 import { saveHostKey } from "@/lib/player";
@@ -37,7 +37,7 @@ function NewCompetition() {
   const [title, setTitle] = useState("");
   const [usePin, setUsePin] = useState(false);
   const [pin, setPin] = useState("");
-  const [startAt, setStartAt] = useState(localNowPlus(10));
+  const [startAt, setStartAt] = useState("");
   const [ops, setOps] = useState<CompOp[]>(["+"]);
   const [difficulty, setDifficulty] = useState<"mudah" | "sedang" | "sulit">("mudah");
   const [customOn, setCustomOn] = useState(false);
@@ -47,10 +47,12 @@ function NewCompetition() {
   const [duration, setDuration] = useState(60);
   const [total, setTotal] = useState(50);
   const [hostName, setHostName] = useState("");
-  const captcha = useMemo(
-    () => ({ a: 1 + Math.floor(Math.random() * 9), b: 1 + Math.floor(Math.random() * 9) }),
-    [],
-  );
+  // Generated after mount so server and client markup match (no hydration mismatch).
+  const [captcha, setCaptcha] = useState<{ a: number; b: number } | null>(null);
+  useEffect(() => {
+    setCaptcha({ a: 1 + Math.floor(Math.random() * 9), b: 1 + Math.floor(Math.random() * 9) });
+    setStartAt(localNowPlus(10));
+  }, []);
   const [captchaAns, setCaptchaAns] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +71,10 @@ function NewCompetition() {
     if (!title.trim()) return setError("Judul lomba wajib diisi.");
     if (!ops.length) return setError("Pilih minimal satu mode soal.");
     if (usePin && !/^\d{4}$/.test(pin)) return setError("PIN harus 4 angka.");
+    if (!captcha) return setError("Tunggu sebentar, soal captcha sedang disiapkan.");
     if (!captchaAns.trim()) return setError("Jawab dulu soal captcha ya!");
+    const startDate = startAt ? new Date(startAt) : new Date();
+    if (Number.isNaN(startDate.getTime())) return setError("Tanggal & jam mulai tidak valid.");
     setBusy(true);
     try {
       const res = await create({
@@ -77,7 +82,7 @@ function NewCompetition() {
           title: title.trim(),
           usePin,
           pin: usePin ? pin : null,
-          startAt: new Date(startAt).toISOString(),
+          startAt: startDate.toISOString(),
           ops,
           difficulty: customOn ? "custom" : difficulty,
           custom: customOn ? { min: Number(cmin), max: Number(cmax) } : null,
@@ -250,7 +255,7 @@ function NewCompetition() {
             style={{ background: "color-mix(in oklab, var(--primary) 10%, white 90%)" }}
           >
             <label className={label} htmlFor="cap">
-              🧮 Buktikan kamu jago: berapa {captcha.a} + {captcha.b}?
+              🧮 Buktikan kamu jago: berapa {captcha ? `${captcha.a} + ${captcha.b}` : "…"}?
             </label>
             <input id="cap" inputMode="numeric" className={field} value={captchaAns} onChange={(e) => setCaptchaAns(e.target.value.replace(/[^\d-]/g, ""))} placeholder="Jawaban" />
           </div>
