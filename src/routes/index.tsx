@@ -216,6 +216,12 @@ function Home() {
           >
             🏆 Ranking
           </Link>
+          <Link
+            to="/competitions"
+            className="btn-pop inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-400 to-teal-600 px-8 py-4 font-display text-xl font-bold text-white shadow-[var(--shadow-fun)] border-4 border-white/70"
+          >
+            🏁 Kompetisi
+          </Link>
           <button
             type="button"
             onClick={shareApp}
