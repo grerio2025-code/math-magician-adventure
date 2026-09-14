@@ -28,8 +28,11 @@ function mulberry32(seed: number) {
   };
 }
 
-function rangeFor(difficulty: CompDifficulty, custom?: CustomRange | null): CustomRange {
-  if (difficulty === "custom" && custom) {
+function rangeFor(
+  difficulty: CompDifficulty,
+  custom?: CustomRange | null,
+): { min: number; max: number } {
+  if (difficulty === "custom" && custom && custom.min != null && custom.max != null) {
     const min = Math.max(0, Math.min(custom.min, custom.max));
     const max = Math.max(1, Math.max(custom.min, custom.max));
     return { min, max };
@@ -40,7 +43,8 @@ function rangeFor(difficulty: CompDifficulty, custom?: CustomRange | null): Cust
 }
 
 function tableMaxFor(difficulty: CompDifficulty, custom?: CustomRange | null): number {
-  if (difficulty === "custom" && custom) return Math.max(2, Math.min(20, custom.max));
+  if (difficulty === "custom" && custom && custom.max != null)
+    return Math.max(2, Math.min(20, custom.max));
   if (difficulty === "mudah") return 5;
   if (difficulty === "sedang") return 10;
   return 12;
