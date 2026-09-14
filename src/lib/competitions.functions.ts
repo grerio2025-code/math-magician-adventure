@@ -14,7 +14,7 @@ export interface CompetitionRow {
   start_at: string;
   ops: string[];
   difficulty: CompDifficulty;
-  difficulty_custom: { min: number; max: number } | null;
+  difficulty_custom: { min?: number; max?: number; missing?: boolean } | null;
   input_type: "blind" | "choices";
   duration_seconds: number;
   total_questions: number;
