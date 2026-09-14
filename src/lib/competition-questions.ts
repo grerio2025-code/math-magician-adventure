@@ -98,22 +98,37 @@ export function generateCompetitionQuestions(params: {
       answer = int(1, 10);
       a = b * answer;
     }
+    let display = `${a} ${opSymbol(op)} ${b}`;
+    let target = answer;
+    if (missingNumber) {
+      const slot = int(0, 2);
+      if (slot === 0) {
+        display = `? ${opSymbol(op)} ${b} = ${answer}`;
+        target = a;
+      } else if (slot === 1) {
+        display = `${a} ${opSymbol(op)} ? = ${answer}`;
+        target = b;
+      } else {
+        display = `${a} ${opSymbol(op)} ${b} = ?`;
+        target = answer;
+      }
+    }
     const q: CompQuestion = {
       a,
       b,
       op,
-      answer,
-      display: `${a} ${opSymbol(op)} ${b}`,
+      answer: target,
+      display,
     };
     if (inputType === "choices") {
-      const set = new Set<number>([answer]);
+      const set = new Set<number>([target]);
       let guard = 0;
       while (set.size < 3 && guard++ < 40) {
-        const delta = int(1, Math.max(3, Math.round(Math.abs(answer) * 0.2) || 3));
-        const cand = rnd() < 0.5 ? answer - delta : answer + delta;
-        if (cand >= 0 && cand !== answer) set.add(cand);
+        const delta = int(1, Math.max(3, Math.round(Math.abs(target) * 0.2) || 3));
+        const cand = rnd() < 0.5 ? target - delta : target + delta;
+        if (cand >= 0 && cand !== target) set.add(cand);
       }
-      let extra = answer + 1;
+      let extra = target + 1;
       while (set.size < 3) set.add(extra++);
       const arr = Array.from(set);
       for (let j = arr.length - 1; j > 0; j--) {
