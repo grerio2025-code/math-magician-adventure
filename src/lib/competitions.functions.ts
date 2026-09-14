@@ -93,9 +93,54 @@ async function autoComplete(db: any) {
   }
 }
 
+async function purge(db: any, ids: string[]) {
+  if (!ids.length) return;
+  await db.from("competition_participants").delete().in("competition_id", ids);
+  await db.from("competition_secrets").delete().in("competition_id", ids);
+  await db.from("competitions").delete().in("id", ids);
+}
+
+/**
+ * Housekeeping:
+ * - active (upcoming/live) competitions older than 2 days after start_at are removed
+ * - completed competitions with no participants are removed
+ * - keep only the 50 newest completed competitions (FIFO: oldest removed first)
+ */
+async function cleanup(db: any) {
+  const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: staleActive } = await db
+    .from("competitions")
+    .select("id")
+    .in("status", ["upcoming", "live"])
+    .lt("start_at", twoDaysAgo);
+  await purge(db, (staleActive ?? []).map((c: any) => c.id));
+
+  const { data: done } = await db
+    .from("competitions")
+    .select("id")
+    .eq("status", "completed")
+    .order("start_at", { ascending: false });
+  const completed = (done ?? []).map((c: any) => c.id as string);
+  if (!completed.length) return;
+
+  const { data: parts } = await db
+    .from("competition_participants")
+    .select("competition_id")
+    .in("competition_id", completed);
+  const counts: Record<string, number> = {};
+  for (const p of parts ?? []) counts[p.competition_id] = (counts[p.competition_id] ?? 0) + 1;
+
+  const empty = completed.filter((id) => !counts[id]);
+  const kept = completed.filter((id) => !!counts[id]);
+  const overflow = kept.slice(50); // newest first → everything past 50 is oldest
+  await purge(db, [...empty, ...overflow]);
+}
+
 export const listCompetitions = createServerFn({ method: "GET" }).handler(async () => {
   const db = await admin();
   await autoComplete(db);
+  await cleanup(db);
+
   const { data, error } = await db
     .from("competitions")
     .select(PUBLIC_COLS)
