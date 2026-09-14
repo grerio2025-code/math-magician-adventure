@@ -130,8 +130,9 @@ async function cleanup(db: any) {
   const counts: Record<string, number> = {};
   for (const p of parts ?? []) counts[p.competition_id] = (counts[p.competition_id] ?? 0) + 1;
 
-  const empty = completed.filter((id) => !counts[id]);
-  const kept = completed.filter((id) => !!counts[id]);
+  const empty = completed.filter((id: string) => !counts[id]);
+  const kept = completed.filter((id: string) => !!counts[id]);
+
   const overflow = kept.slice(50); // newest first → everything past 50 is oldest
   await purge(db, [...empty, ...overflow]);
 }
