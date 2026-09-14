@@ -64,8 +64,11 @@ export function generateCompetitionQuestions(params: {
   inputType: "blind" | "choices";
   total: number;
   seed: number;
+  /** Mode "Tebak Angka Hilang": satu angka disembunyikan dengan "?" */
+  missingNumber?: boolean;
 }): CompQuestion[] {
   const { ops, difficulty, custom, inputType, total, seed } = params;
+  const missingNumber = params.missingNumber ?? custom?.missing ?? false;
   const rnd = mulberry32(seed);
   const int = (min: number, max: number) => min + Math.floor(rnd() * (max - min + 1));
   const { min, max } = rangeFor(difficulty, custom);
