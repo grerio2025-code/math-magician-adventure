@@ -11,8 +11,10 @@ export interface CompQuestion {
 }
 
 export interface CustomRange {
-  min: number;
-  max: number;
+  min?: number;
+  max?: number;
+  /** "Tebak Angka Hilang": sembunyikan salah satu angka dengan "?" */
+  missing?: boolean;
 }
 
 /** Deterministic PRNG so every participant gets identical questions. */
