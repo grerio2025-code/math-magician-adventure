@@ -46,6 +46,7 @@ function NewCompetition() {
   const [inputType, setInputType] = useState<"blind" | "choices">("choices");
   const [duration, setDuration] = useState(60);
   const [total, setTotal] = useState(50);
+  const [missingNumber, setMissingNumber] = useState(false);
   const [hostName, setHostName] = useState("");
   // Generated after mount so server and client markup match (no hydration mismatch).
   const [captcha, setCaptcha] = useState<{ a: number; b: number } | null>(null);
@@ -90,6 +91,7 @@ function NewCompetition() {
           durationSeconds: Number(duration),
           totalQuestions: Number(total),
           hostName: hostName.trim(),
+          missingNumber,
           captchaA: captcha.a,
           captchaB: captcha.b,
           captchaAnswer: Number(captchaAns),
@@ -192,6 +194,37 @@ function NewCompetition() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div>
+            <span className={label}>Gaya Soal</span>
+            <div className="flex gap-2">
+              {(
+                [
+                  [false, "Hitung Biasa"],
+                  [true, "❓ Tebak Angka Hilang"],
+                ] as const
+              ).map(([v, t]) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setMissingNumber(v)}
+                  className="btn-pop flex-1 rounded-2xl px-3 py-2.5 font-display text-sm font-bold"
+                  style={
+                    missingNumber === v
+                      ? { background: "var(--gradient-op-divide, var(--gradient-op-times))", color: "white" }
+                      : { background: "white", color: "var(--foreground)" }
+                  }
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            {missingNumber && (
+              <p className="mt-1.5 text-sm font-semibold text-muted-foreground">
+                Contoh soal: ? + 5 = 12, 4 × ? = 20, 8 + 2 = ?
+              </p>
+            )}
           </div>
 
           <div>

@@ -191,6 +191,7 @@ export const createCompetition = createServerFn({ method: "POST" })
         ops: opsSchema,
         difficulty: z.enum(["mudah", "sedang", "sulit", "custom"]),
         custom: z.object({ min: z.number().int().min(0).max(100000), max: z.number().int().min(1).max(100000) }).nullable().optional(),
+        missingNumber: z.boolean().optional().default(false),
         inputType: z.enum(["blind", "choices"]),
         durationSeconds: z.number().int().min(15).max(3600),
         totalQuestions: z.number().int().min(5).max(200),
@@ -232,7 +233,12 @@ export const createCompetition = createServerFn({ method: "POST" })
         start_at: new Date(data.startAt).toISOString(),
         ops: data.ops,
         difficulty: data.difficulty,
-        difficulty_custom: data.difficulty === "custom" ? data.custom : null,
+        difficulty_custom:
+          data.difficulty === "custom"
+            ? { ...data.custom, missing: data.missingNumber }
+            : data.missingNumber
+              ? { missing: true }
+              : null,
         input_type: data.inputType,
         duration_seconds: data.durationSeconds,
         total_questions: data.totalQuestions,
