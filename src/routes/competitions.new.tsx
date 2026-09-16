@@ -46,6 +46,7 @@ function NewCompetition() {
   const [inputType, setInputType] = useState<"blind" | "choices">("choices");
   const [duration, setDuration] = useState(60);
   const [total, setTotal] = useState(50);
+  const [missingNumber, setMissingNumber] = useState(false);
   const [hostName, setHostName] = useState("");
   // Generated after mount so server and client markup match (no hydration mismatch).
   const [captcha, setCaptcha] = useState<{ a: number; b: number } | null>(null);
