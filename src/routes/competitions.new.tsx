@@ -197,6 +197,37 @@ function NewCompetition() {
           </div>
 
           <div>
+            <span className={label}>Gaya Soal</span>
+            <div className="flex gap-2">
+              {(
+                [
+                  [false, "Hitung Biasa"],
+                  [true, "❓ Tebak Angka Hilang"],
+                ] as const
+              ).map(([v, t]) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setMissingNumber(v)}
+                  className="btn-pop flex-1 rounded-2xl px-3 py-2.5 font-display text-sm font-bold"
+                  style={
+                    missingNumber === v
+                      ? { background: "var(--gradient-op-divide, var(--gradient-op-times))", color: "white" }
+                      : { background: "white", color: "var(--foreground)" }
+                  }
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            {missingNumber && (
+              <p className="mt-1.5 text-sm font-semibold text-muted-foreground">
+                Contoh soal: ? + 5 = 12, 4 × ? = 20, 8 + 2 = ?
+              </p>
+            )}
+          </div>
+
+          <div>
             <label className={label} htmlFor="diff">Tingkat Kesulitan</label>
             <select id="diff" className={field} value={difficulty} disabled={customOn} onChange={(e) => setDifficulty(e.target.value as any)}>
               <option value="mudah">Mudah (Level 1)</option>
