@@ -91,6 +91,7 @@ function NewCompetition() {
           durationSeconds: Number(duration),
           totalQuestions: Number(total),
           hostName: hostName.trim(),
+          missingNumber,
           captchaA: captcha.a,
           captchaB: captcha.b,
           captchaAnswer: Number(captchaAns),
