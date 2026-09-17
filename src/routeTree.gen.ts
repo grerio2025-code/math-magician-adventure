@@ -13,6 +13,7 @@ import { Route as RankingRouteImport } from './routes/ranking'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CompetitionsIndexRouteImport } from './routes/competitions.index'
+import { Route as FractionLevelRouteImport } from './routes/fraction.$level'
 import { Route as CompetitionsNewRouteImport } from './routes/competitions.new'
 import { Route as CompetitionsCodeIndexRouteImport } from './routes/competitions.$code.index'
 import { Route as PlayOpLevelRouteImport } from './routes/play.$op.$level'
@@ -38,6 +39,11 @@ const IndexRoute = IndexRouteImport.update({
 const CompetitionsIndexRoute = CompetitionsIndexRouteImport.update({
   id: '/competitions/',
   path: '/competitions/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FractionLevelRoute = FractionLevelRouteImport.update({
+  id: '/fraction/$level',
+  path: '/fraction/$level',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompetitionsNewRoute = CompetitionsNewRouteImport.update({
@@ -76,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/ranking': typeof RankingRoute
   '/competitions/new': typeof CompetitionsNewRoute
+  '/fraction/$level': typeof FractionLevelRoute
   '/competitions/': typeof CompetitionsIndexRoute
   '/api/public/mirror-backfill': typeof ApiPublicMirrorBackfillRoute
   '/competitions/$code/play': typeof CompetitionsCodePlayRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/ranking': typeof RankingRoute
   '/competitions/new': typeof CompetitionsNewRoute
+  '/fraction/$level': typeof FractionLevelRoute
   '/competitions': typeof CompetitionsIndexRoute
   '/api/public/mirror-backfill': typeof ApiPublicMirrorBackfillRoute
   '/competitions/$code/play': typeof CompetitionsCodePlayRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/ranking': typeof RankingRoute
   '/competitions/new': typeof CompetitionsNewRoute
+  '/fraction/$level': typeof FractionLevelRoute
   '/competitions/': typeof CompetitionsIndexRoute
   '/api/public/mirror-backfill': typeof ApiPublicMirrorBackfillRoute
   '/competitions/$code/play': typeof CompetitionsCodePlayRoute
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
     | '/privacy-policy'
     | '/ranking'
     | '/competitions/new'
+    | '/fraction/$level'
     | '/competitions/'
     | '/api/public/mirror-backfill'
     | '/competitions/$code/play'
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/privacy-policy'
     | '/ranking'
     | '/competitions/new'
+    | '/fraction/$level'
     | '/competitions'
     | '/api/public/mirror-backfill'
     | '/competitions/$code/play'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/privacy-policy'
     | '/ranking'
     | '/competitions/new'
+    | '/fraction/$level'
     | '/competitions/'
     | '/api/public/mirror-backfill'
     | '/competitions/$code/play'
@@ -152,6 +164,7 @@ export interface RootRouteChildren {
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   RankingRoute: typeof RankingRoute
   CompetitionsNewRoute: typeof CompetitionsNewRoute
+  FractionLevelRoute: typeof FractionLevelRoute
   CompetitionsIndexRoute: typeof CompetitionsIndexRoute
   ApiPublicMirrorBackfillRoute: typeof ApiPublicMirrorBackfillRoute
   CompetitionsCodePlayRoute: typeof CompetitionsCodePlayRoute
@@ -188,6 +201,13 @@ declare module '@tanstack/react-router' {
       path: '/competitions'
       fullPath: '/competitions/'
       preLoaderRoute: typeof CompetitionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fraction/$level': {
+      id: '/fraction/$level'
+      path: '/fraction/$level'
+      fullPath: '/fraction/$level'
+      preLoaderRoute: typeof FractionLevelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/competitions/new': {
@@ -240,6 +260,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   RankingRoute: RankingRoute,
   CompetitionsNewRoute: CompetitionsNewRoute,
+  FractionLevelRoute: FractionLevelRoute,
   CompetitionsIndexRoute: CompetitionsIndexRoute,
   ApiPublicMirrorBackfillRoute: ApiPublicMirrorBackfillRoute,
   CompetitionsCodePlayRoute: CompetitionsCodePlayRoute,
