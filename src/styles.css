@@ -74,6 +74,8 @@
   --gradient-op-times: linear-gradient(135deg, oklch(0.55 0.23 300), oklch(0.45 0.22 285));
   --gradient-op-divide: linear-gradient(135deg, oklch(0.62 0.13 215), oklch(0.58 0.13 195));
   --gradient-op-hc: linear-gradient(135deg, oklch(0.45 0.03 285), oklch(0.32 0.03 285));
+  --op-fraction: oklch(0.63 0.22 350);
+  --gradient-op-fraction: linear-gradient(135deg, oklch(0.66 0.23 350), oklch(0.58 0.22 20));
 }
 
 
