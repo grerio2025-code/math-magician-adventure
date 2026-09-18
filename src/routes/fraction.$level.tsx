@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { FractionVisual, FractionText } from "@/components/FractionVisual";
 import {
   buildQuiz,
@@ -175,8 +175,10 @@ function Summary({
 }
 
 function Quiz({ level }: { level: FractionLevel }) {
-  const [round, setRound] = useState(0);
-  const questions = useMemo<FractionQuestion[]>(() => buildQuiz(level), [level, round]);
+  const [questions, setQuestions] = useState<FractionQuestion[] | null>(null);
+  useEffect(() => {
+    setQuestions(buildQuiz(level));
+  }, [level]);
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
