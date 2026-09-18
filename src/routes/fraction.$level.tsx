@@ -187,11 +187,19 @@ function Quiz({ level }: { level: FractionLevel }) {
   const [wrongPick, setWrongPick] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
+  if (!questions) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-20 text-center font-display text-xl font-bold text-muted-foreground">
+        Menyiapkan soal… 🍕
+      </div>
+    );
+  }
+
   const q = questions[index];
   const total = questions.length;
 
   function retry() {
-    setRound((r) => r + 1);
+    setQuestions(buildQuiz(level));
     setIndex(0);
     setScore(0);
     setCorrectCount(0);
