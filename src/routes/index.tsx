@@ -145,6 +145,85 @@ function OpCard({ op, items }: { op: OpKey; items: LevelBtn[] }) {
 }
 
 
+const FRACTION_META = {
+  card: "color-mix(in oklab, var(--op-fraction) 8%, white 92%)",
+  pill: "color-mix(in oklab, var(--op-fraction) 12%, white 88%)",
+  gradient: "var(--gradient-op-fraction)",
+};
+
+const fractionBtns = [
+  { level: "1", label: "Level 1", sub: "Mengenal Gambar", icon: "🏆" },
+  { level: "2", label: "Level 2", sub: "Bandingkan Nilai", icon: "⚡" },
+  { level: "3", label: "Level 3", sub: "Penjumlahan Dasar", icon: "🚀" },
+  { level: "lab", label: "HC / Lab", sub: "Lab Pecahan Interaktif", icon: "🧪" },
+];
+
+function FractionRow({ level, label, sub, icon }: (typeof fractionBtns)[number]) {
+  return (
+    <Link
+      to="/fraction/$level"
+      params={{ level }}
+      className="btn-pop flex items-center gap-3 rounded-2xl px-3 py-2.5 border-2"
+      style={{
+        background: FRACTION_META.pill,
+        borderColor: "oklch(1 0 0 / 0.8)",
+        boxShadow: "var(--shadow-soft)",
+      }}
+    >
+      <span
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-lg"
+        style={{ background: "oklch(1 0 0 / 0.85)", boxShadow: "var(--shadow-soft)" }}
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-display text-lg md:text-xl font-bold text-foreground leading-tight">
+          {label}
+        </span>
+        <span className="block text-xs text-muted-foreground truncate">{sub}</span>
+      </span>
+      <span
+        className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-bold text-white"
+        style={{ background: FRACTION_META.gradient }}
+      >
+        ›
+      </span>
+    </Link>
+  );
+}
+
+function FractionCard() {
+  return (
+    <section
+      className="overflow-hidden rounded-3xl border-4 border-white/70"
+      style={{ background: FRACTION_META.card, boxShadow: "var(--shadow-fun)" }}
+    >
+      <header
+        className="flex items-center gap-3 px-4 py-3"
+        style={{ background: FRACTION_META.gradient, color: "white" }}
+      >
+        <span
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full font-display text-xl font-bold"
+          style={{ background: "oklch(1 0 0 / 0.25)" }}
+        >
+          🍕
+        </span>
+        <span className="min-w-0">
+          <span className="block font-display text-lg md:text-2xl font-bold leading-tight whitespace-nowrap">
+            Pecahan
+          </span>
+          <span className="block text-[11px] md:text-xs opacity-90">Eksplorasi &amp; Kuasai</span>
+        </span>
+      </header>
+      <div className="grid gap-2.5 p-3">
+        {fractionBtns.map((b) => (
+          <FractionRow key={b.level} {...b} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 async function shareApp() {
   const url = typeof window !== "undefined" ? window.location.origin : "";
   const data = {
@@ -202,11 +281,12 @@ function Home() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
           <OpCard op="plus" items={plusBtns} />
           <OpCard op="minus" items={minusBtns} />
           <OpCard op="times" items={timesBtns} />
           <OpCard op="divide" items={divideBtns} />
+          <FractionCard />
         </div>
 
         <div className="mt-10 flex flex-wrap justify-center gap-3">
