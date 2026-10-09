@@ -62,3 +62,14 @@ export function getHostKey(code: string): string | null {
 export function newHostKey(): string {
   return randomKey();
 }
+
+/** MC secret (for sharing the MC link) kept on the creating device. */
+export function saveMcKey(code: string, mcKey: string) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem("goq-mc-" + code, mcKey);
+}
+
+export function getMcKey(code: string): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem("goq-mc-" + code);
+}

@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { createCompetition } from "@/lib/competitions.functions";
+import { createCompetition, createQuiz } from "@/lib/competitions.functions";
 import { OP_LABEL_ID, type CompOp } from "@/lib/competition-questions";
-import { saveHostKey } from "@/lib/player";
+import { saveHostKey, saveMcKey } from "@/lib/player";
+import QuizEditor, { emptyItem, type QuizItem } from "@/components/QuizEditor";
 
 export const Route = createFileRoute("/competitions/new")({
   head: () => ({
@@ -48,6 +49,10 @@ function NewCompetition() {
   const [total, setTotal] = useState(50);
   const [missingNumber, setMissingNumber] = useState(false);
   const [hostName, setHostName] = useState("");
+  const makeQuiz = useServerFn(createQuiz);
+  const [kind, setKind] = useState<"speed" | "quiz">("speed");
+  const [qSeconds, setQSeconds] = useState(20);
+  const [items, setItems] = useState<QuizItem[]>([emptyItem()]);
   // Generated after mount so server and client markup match (no hydration mismatch).
   const [captcha, setCaptcha] = useState<{ a: number; b: number } | null>(null);
   useEffect(() => {
@@ -76,6 +81,53 @@ function NewCompetition() {
     if (!captchaAns.trim()) return setError("Jawab dulu soal captcha ya!");
     const startDate = startAt ? new Date(startAt) : new Date();
     if (Number.isNaN(startDate.getTime())) return setError("Tanggal & jam mulai tidak valid.");
+    if (kind === "quiz") {
+      const qs = items.map((it) => {
+        const choices = it.choices.map((c) => c.trim()).filter(Boolean);
+        return {
+          prompt: it.prompt.trim(),
+          choices: inputType === "choices" ? choices : null,
+          answer: inputType === "choices" ? (it.choices[it.correct] ?? "").trim() : it.answer.trim(),
+        };
+      });
+      if (!qs.length) return setError("Tambahkan minimal satu soal.");
+      for (const [i, q] of qs.entries()) {
+        if (!q.prompt) return setError(`Soal ${i + 1}: pertanyaan masih kosong.`);
+        if (!q.answer) return setError(`Soal ${i + 1}: jawaban benar belum diisi.`);
+        if (inputType === "choices" && (q.choices?.length ?? 0) < 2)
+          return setError(`Soal ${i + 1}: isi minimal 2 pilihan.`);
+      }
+      setBusy(true);
+      try {
+        const res = await makeQuiz({
+          data: {
+            title: title.trim(),
+            usePin,
+            pin: usePin ? pin : null,
+            startAt: startDate.toISOString(),
+            inputType,
+            questionSeconds: Number(qSeconds),
+            hostName: hostName.trim(),
+            questions: qs,
+            captchaA: captcha.a,
+            captchaB: captcha.b,
+            captchaAnswer: Number(captchaAns),
+          },
+        });
+        if (!res.ok) {
+          setError(res.error);
+          setBusy(false);
+          return;
+        }
+        saveHostKey(res.competition.join_code, res.hostKey);
+        saveMcKey(res.competition.join_code, res.mcKey);
+        navigate({ to: "/competitions/$code", params: { code: res.competition.join_code } });
+      } catch {
+        setError("Gagal membuat quiz. Coba lagi.");
+        setBusy(false);
+      }
+      return;
+    }
     setBusy(true);
     try {
       const res = await create({
@@ -130,6 +182,31 @@ function NewCompetition() {
           style={{ background: "oklch(1 0 0 / 0.8)", boxShadow: "var(--shadow-fun)" }}
         >
           <div>
+            <span className={label}>Jenis Kompetisi</span>
+            <div className="flex gap-2">
+              {(
+                [
+                  ["speed", "⚡ Hitung Cepat"],
+                  ["quiz", "🎤 Quiz Live"],
+                ] as const
+              ).map(([v, t]) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setKind(v)}
+                  className="btn-pop flex-1 rounded-2xl px-3 py-2.5 font-display font-bold"
+                  style={
+                    kind === v
+                      ? { background: "var(--gradient-op-plus)", color: "white" }
+                      : { background: "white", color: "var(--foreground)" }
+                  }
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
             <label className={label} htmlFor="title">Judul Lomba</label>
             <input id="title" className={field} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Lomba Hitung Cepat Kelas 3" />
           </div>
@@ -175,6 +252,8 @@ function NewCompetition() {
             <input id="start" type="datetime-local" className={field} value={startAt} onChange={(e) => setStartAt(e.target.value)} />
           </div>
 
+          {kind === "speed" ? (
+          <>
           <div>
             <span className={label}>Mode Soal (bisa pilih beberapa)</span>
             <div className="grid grid-cols-2 gap-2">
@@ -282,6 +361,17 @@ function NewCompetition() {
               <input id="tot" type="number" min={5} max={200} className={field} value={total} onChange={(e) => setTotal(Number(e.target.value))} />
             </div>
           </div>
+          </>
+          ) : (
+            <QuizEditor
+              inputType={inputType}
+              setInputType={setInputType}
+              qSeconds={qSeconds}
+              setQSeconds={setQSeconds}
+              items={items}
+              setItems={setItems}
+            />
+          )}
 
           <div
             className="rounded-2xl border-4 border-white p-3"

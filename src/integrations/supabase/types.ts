@@ -75,18 +75,21 @@ export type Database = {
           competition_id: string
           created_at: string
           host_key: string
+          mc_key: string | null
           pin: string | null
         }
         Insert: {
           competition_id: string
           created_at?: string
           host_key: string
+          mc_key?: string | null
           pin?: string | null
         }
         Update: {
           competition_id?: string
           created_at?: string
           host_key?: string
+          mc_key?: string | null
           pin?: string | null
         }
         Relationships: [
@@ -102,6 +105,7 @@ export type Database = {
       competitions: {
         Row: {
           created_at: string
+          current_question: number
           difficulty: string
           difficulty_custom: Json | null
           duration_seconds: number
@@ -111,8 +115,11 @@ export type Database = {
           id: string
           input_type: string
           join_code: string
+          kind: string
           ops: string[]
+          question_seconds: number
           question_seed: number
+          question_started_at: string | null
           start_at: string
           started_at: string | null
           status: string
@@ -122,6 +129,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          current_question?: number
           difficulty?: string
           difficulty_custom?: Json | null
           duration_seconds?: number
@@ -131,8 +139,11 @@ export type Database = {
           id?: string
           input_type?: string
           join_code: string
+          kind?: string
           ops: string[]
+          question_seconds?: number
           question_seed: number
+          question_started_at?: string | null
           start_at: string
           started_at?: string | null
           status?: string
@@ -142,6 +153,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          current_question?: number
           difficulty?: string
           difficulty_custom?: Json | null
           duration_seconds?: number
@@ -151,8 +163,11 @@ export type Database = {
           id?: string
           input_type?: string
           join_code?: string
+          kind?: string
           ops?: string[]
+          question_seconds?: number
           question_seed?: number
+          question_started_at?: string | null
           start_at?: string
           started_at?: string | null
           status?: string
@@ -191,6 +206,82 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      quiz_answers: {
+        Row: {
+          competition_id: string
+          correct: boolean
+          created_at: string
+          id: string
+          ms: number
+          player_key: string
+          position: number
+        }
+        Insert: {
+          competition_id: string
+          correct: boolean
+          created_at?: string
+          id?: string
+          ms?: number
+          player_key: string
+          position: number
+        }
+        Update: {
+          competition_id?: string
+          correct?: boolean
+          created_at?: string
+          id?: string
+          ms?: number
+          player_key?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_answers_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_questions: {
+        Row: {
+          answer: string
+          choices: string[] | null
+          competition_id: string
+          created_at: string
+          id: string
+          position: number
+          prompt: string
+        }
+        Insert: {
+          answer: string
+          choices?: string[] | null
+          competition_id: string
+          created_at?: string
+          id?: string
+          position: number
+          prompt: string
+        }
+        Update: {
+          answer?: string
+          choices?: string[] | null
+          competition_id?: string
+          created_at?: string
+          id?: string
+          position?: number
+          prompt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rankings: {
         Row: {
