@@ -24,6 +24,10 @@ export interface CompetitionRow {
   ended_at: string | null;
   host_name: string | null;
   created_at: string;
+  kind?: "speed" | "quiz";
+  current_question?: number;
+  question_started_at?: string | null;
+  question_seconds?: number;
 }
 
 export interface ParticipantRow {
@@ -41,7 +45,7 @@ export interface ParticipantRow {
 }
 
 const PUBLIC_COLS =
-  "id, title, join_code, has_pin, start_at, ops, difficulty, difficulty_custom, input_type, duration_seconds, total_questions, status, question_seed, started_at, ended_at, host_name, created_at";
+  "id, title, join_code, has_pin, start_at, ops, difficulty, difficulty_custom, input_type, duration_seconds, total_questions, status, question_seed, started_at, ended_at, host_name, created_at, kind, current_question, question_started_at, question_seconds";
 
 const PARTICIPANT_COLS =
   "id, competition_id, player_key, name, age, school, country_code, score, answered, seconds, finished_at";
@@ -78,11 +82,11 @@ async function admin() {
 async function autoComplete(db: any) {
   const { data } = await db
     .from("competitions")
-    .select("id, started_at, duration_seconds")
+    .select("id, started_at, duration_seconds, kind")
     .eq("status", "live");
   const now = Date.now();
   const stale = (data ?? []).filter(
-    (c: any) =>
+    (c: any) => c.kind !== "quiz" &&
       c.started_at && new Date(c.started_at).getTime() + c.duration_seconds * 1000 <= now,
   );
   for (const c of stale) {
@@ -96,6 +100,8 @@ async function autoComplete(db: any) {
 async function purge(db: any, ids: string[]) {
   if (!ids.length) return;
   await db.from("competition_participants").delete().in("competition_id", ids);
+  await db.from("quiz_answers").delete().in("competition_id", ids);
+  await db.from("quiz_questions").delete().in("competition_id", ids);
   await db.from("competition_secrets").delete().in("competition_id", ids);
   await db.from("competitions").delete().in("id", ids);
 }
@@ -448,4 +454,262 @@ export const finishParticipant = createServerFn({ method: "POST" })
       .eq("competition_id", comp.id)
       .eq("player_key", data.playerKey);
     return { ok: true as const };
+  });
+
+// ================= QUIZ LIVE =================
+
+export interface QuizQuestionPublic {
+  position: number;
+  prompt: string;
+  choices: string[] | null;
+}
+
+const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+
+export const createQuiz = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        title: z.string().trim().min(1).max(120),
+        usePin: z.boolean(),
+        pin: z.string().regex(/^\d{4}$/).optional().nullable(),
+        startAt: z.string().min(4),
+        inputType: z.enum(["blind", "choices"]),
+        questionSeconds: z.number().int().min(5).max(600),
+        hostName: z.string().trim().max(40).optional().default(""),
+        questions: z
+          .array(
+            z.object({
+              prompt: z.string().trim().min(1).max(500),
+              choices: z.array(z.string().trim().min(1).max(120)).max(4).optional().nullable(),
+              answer: z.string().trim().min(1).max(120),
+            }),
+          )
+          .min(1)
+          .max(100),
+        captchaAnswer: z.number().int(),
+        captchaA: z.number().int().min(1).max(20),
+        captchaB: z.number().int().min(1).max(20),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    if (data.captchaA + data.captchaB !== data.captchaAnswer)
+      return { ok: false as const, error: "Jawaban captcha salah. Coba lagi ya!" };
+    if (data.usePin && !data.pin) return { ok: false as const, error: "PIN 4 angka wajib diisi." };
+    if (data.inputType === "choices") {
+      for (const q of data.questions) {
+        if (!q.choices || q.choices.length < 2 || !q.choices.includes(q.answer))
+          return { ok: false as const, error: "Setiap soal butuh 2–4 pilihan dan satu jawaban benar." };
+      }
+    }
+    const db = await admin();
+    let code = makeJoinCode();
+    for (let i = 0; i < 5; i++) {
+      const { data: ex } = await db.from("competitions").select("id").eq("join_code", code).maybeSingle();
+      if (!ex) break;
+      code = makeJoinCode();
+    }
+    const { data: comp, error } = await db
+      .from("competitions")
+      .insert({
+        title: data.title,
+        join_code: code,
+        has_pin: data.usePin,
+        start_at: new Date(data.startAt).toISOString(),
+        ops: ["+"],
+        difficulty: "mudah",
+        input_type: data.inputType,
+        duration_seconds: 86400,
+        total_questions: data.questions.length,
+        status: "upcoming",
+        question_seed: 0,
+        host_name: data.hostName || null,
+        kind: "quiz",
+        question_seconds: data.questionSeconds,
+      })
+      .select(PUBLIC_COLS)
+      .single();
+    if (error || !comp) return { ok: false as const, error: "Gagal menyimpan quiz. Coba lagi." };
+    const hostKey = randomKey();
+    const mcKey = randomKey();
+    await db.from("competition_secrets").insert({
+      competition_id: comp.id,
+      host_key: hostKey,
+      mc_key: mcKey,
+      pin: data.usePin ? data.pin : null,
+    });
+    await db.from("quiz_questions").insert(
+      data.questions.map((q, i) => ({
+        competition_id: comp.id,
+        position: i,
+        prompt: q.prompt,
+        choices: data.inputType === "choices" ? q.choices : null,
+        answer: q.answer,
+      })),
+    );
+    return { ok: true as const, competition: comp as CompetitionRow, hostKey, mcKey };
+  });
+
+async function compByCode(db: any, code: string) {
+  const { data } = await db.from("competitions").select(PUBLIC_COLS).eq("join_code", code.toUpperCase()).maybeSingle();
+  return data as CompetitionRow | null;
+}
+
+export const getQuizState = createServerFn({ method: "GET" })
+  .inputValidator((d: { code: string; playerKey?: string }) =>
+    z.object({ code: z.string().min(3).max(12), playerKey: z.string().max(64).optional() }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const db = await admin();
+    const comp = await compByCode(db, data.code);
+    if (!comp) return { competition: null, question: null as QuizQuestionPublic | null, answered: false };
+    let question: QuizQuestionPublic | null = null;
+    let answered = false;
+    if (comp.status === "live" && (comp.current_question ?? -1) >= 0) {
+      const { data: q } = await db
+        .from("quiz_questions")
+        .select("position, prompt, choices")
+        .eq("competition_id", comp.id)
+        .eq("position", comp.current_question)
+        .maybeSingle();
+      question = q ?? null;
+      if (data.playerKey) {
+        const { data: a } = await db
+          .from("quiz_answers")
+          .select("id")
+          .eq("competition_id", comp.id)
+          .eq("player_key", data.playerKey)
+          .eq("position", comp.current_question)
+          .maybeSingle();
+        answered = !!a;
+      }
+    }
+    return { competition: comp, question, answered };
+  });
+
+async function mcGuard(db: any, code: string, mcKey: string) {
+  const comp = await compByCode(db, code);
+  if (!comp) return null;
+  const { data: s } = await db.from("competition_secrets").select("mc_key, host_key").eq("competition_id", comp.id).maybeSingle();
+  if (!s || (s.mc_key !== mcKey && s.host_key !== mcKey)) return null;
+  return comp;
+}
+
+const mcInput = (d: unknown) =>
+  z.object({ code: z.string().min(3).max(12), mcKey: z.string().min(8).max(64) }).parse(d);
+
+export const getMcState = createServerFn({ method: "POST" })
+  .inputValidator(mcInput)
+  .handler(async ({ data }) => {
+    const db = await admin();
+    const comp = await mcGuard(db, data.code, data.mcKey);
+    if (!comp) return { ok: false as const };
+    const { data: qs } = await db
+      .from("quiz_questions")
+      .select("position, prompt, choices, answer")
+      .eq("competition_id", comp.id)
+      .order("position");
+    let answeredCount = 0;
+    if ((comp.current_question ?? -1) >= 0) {
+      const { count } = await db
+        .from("quiz_answers")
+        .select("id", { count: "exact", head: true })
+        .eq("competition_id", comp.id)
+        .eq("position", comp.current_question);
+      answeredCount = count ?? 0;
+    }
+    const { data: parts } = await db
+      .from("competition_participants")
+      .select(PARTICIPANT_COLS)
+      .eq("competition_id", comp.id);
+    return {
+      ok: true as const,
+      competition: comp,
+      questions: (qs ?? []) as { position: number; prompt: string; choices: string[] | null; answer: string }[],
+      answeredCount,
+      participants: (parts ?? []) as ParticipantRow[],
+    };
+  });
+
+export const mcAdvance = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({ code: z.string().min(3).max(12), mcKey: z.string().min(8).max(64), action: z.enum(["start", "next", "finish"]) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const db = await admin();
+    const comp = await mcGuard(db, data.code, data.mcKey);
+    if (!comp) return { ok: false as const, error: "Tautan MC tidak valid." };
+    const now = new Date().toISOString();
+    if (data.action === "finish") {
+      await db.from("competitions").update({ status: "completed", ended_at: now }).eq("id", comp.id);
+      return { ok: true as const };
+    }
+    if (data.action === "start") {
+      await db
+        .from("competitions")
+        .update({ status: "live", started_at: now, ended_at: null, current_question: 0, question_started_at: now })
+        .eq("id", comp.id);
+      return { ok: true as const };
+    }
+    const next = (comp.current_question ?? -1) + 1;
+    if (next >= comp.total_questions) {
+      await db.from("competitions").update({ status: "completed", ended_at: now }).eq("id", comp.id);
+      return { ok: true as const };
+    }
+    await db.from("competitions").update({ current_question: next, question_started_at: now }).eq("id", comp.id);
+    return { ok: true as const };
+  });
+
+export const submitQuizAnswer = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        code: z.string().min(3).max(12),
+        playerKey: z.string().min(8).max(64),
+        position: z.number().int().min(0).max(199),
+        answer: z.string().max(120),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const db = await admin();
+    const comp = await compByCode(db, data.code);
+    if (!comp || comp.status !== "live" || comp.current_question !== data.position)
+      return { ok: false as const, error: "Soal ini sudah ditutup." };
+    const startedMs = comp.question_started_at ? new Date(comp.question_started_at).getTime() : Date.now();
+    const ms = Math.max(0, Date.now() - startedMs);
+    if (ms > (comp.question_seconds ?? 20) * 1000 + 1500) return { ok: false as const, error: "Waktu soal habis." };
+    const { data: part } = await db
+      .from("competition_participants")
+      .select("id, score, answered, seconds")
+      .eq("competition_id", comp.id)
+      .eq("player_key", data.playerKey)
+      .maybeSingle();
+    if (!part) return { ok: false as const, error: "Kamu belum terdaftar." };
+    const { data: q } = await db
+      .from("quiz_questions")
+      .select("answer")
+      .eq("competition_id", comp.id)
+      .eq("position", data.position)
+      .maybeSingle();
+    if (!q) return { ok: false as const, error: "Soal tidak valid." };
+    const correct = norm(q.answer) === norm(data.answer);
+    const { error } = await db.from("quiz_answers").insert({
+      competition_id: comp.id,
+      player_key: data.playerKey,
+      position: data.position,
+      correct,
+      ms,
+    });
+    if (error) return { ok: false as const, error: "Kamu sudah menjawab soal ini." };
+    await db
+      .from("competition_participants")
+      .update({
+        score: part.score + (correct ? 1 : 0),
+        answered: part.answered + 1,
+        seconds: part.seconds + Math.round(ms / 1000),
+      })
+      .eq("id", part.id);
+    return { ok: true as const, correct };
   });
