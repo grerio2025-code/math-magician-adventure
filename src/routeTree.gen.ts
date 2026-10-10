@@ -18,7 +18,9 @@ import { Route as CompetitionsNewRouteImport } from './routes/competitions.new'
 import { Route as CompetitionsCodeIndexRouteImport } from './routes/competitions.$code.index'
 import { Route as PlayOpLevelRouteImport } from './routes/play.$op.$level'
 import { Route as CompetitionsCodeResultsRouteImport } from './routes/competitions.$code.results'
+import { Route as CompetitionsCodeQuizRouteImport } from './routes/competitions.$code.quiz'
 import { Route as CompetitionsCodePlayRouteImport } from './routes/competitions.$code.play'
+import { Route as CompetitionsCodeMcRouteImport } from './routes/competitions.$code.mc'
 import { Route as ApiPublicMirrorBackfillRouteImport } from './routes/api/public/mirror-backfill'
 
 const RankingRoute = RankingRouteImport.update({
@@ -66,9 +68,19 @@ const CompetitionsCodeResultsRoute = CompetitionsCodeResultsRouteImport.update({
   path: '/competitions/$code/results',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CompetitionsCodeQuizRoute = CompetitionsCodeQuizRouteImport.update({
+  id: '/competitions/$code/quiz',
+  path: '/competitions/$code/quiz',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CompetitionsCodePlayRoute = CompetitionsCodePlayRouteImport.update({
   id: '/competitions/$code/play',
   path: '/competitions/$code/play',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompetitionsCodeMcRoute = CompetitionsCodeMcRouteImport.update({
+  id: '/competitions/$code/mc',
+  path: '/competitions/$code/mc',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicMirrorBackfillRoute = ApiPublicMirrorBackfillRouteImport.update({
@@ -85,7 +97,9 @@ export interface FileRoutesByFullPath {
   '/fraction/$level': typeof FractionLevelRoute
   '/competitions/': typeof CompetitionsIndexRoute
   '/api/public/mirror-backfill': typeof ApiPublicMirrorBackfillRoute
+  '/competitions/$code/mc': typeof CompetitionsCodeMcRoute
   '/competitions/$code/play': typeof CompetitionsCodePlayRoute
+  '/competitions/$code/quiz': typeof CompetitionsCodeQuizRoute
   '/competitions/$code/results': typeof CompetitionsCodeResultsRoute
   '/play/$op/$level': typeof PlayOpLevelRoute
   '/competitions/$code/': typeof CompetitionsCodeIndexRoute
@@ -98,7 +112,9 @@ export interface FileRoutesByTo {
   '/fraction/$level': typeof FractionLevelRoute
   '/competitions': typeof CompetitionsIndexRoute
   '/api/public/mirror-backfill': typeof ApiPublicMirrorBackfillRoute
+  '/competitions/$code/mc': typeof CompetitionsCodeMcRoute
   '/competitions/$code/play': typeof CompetitionsCodePlayRoute
+  '/competitions/$code/quiz': typeof CompetitionsCodeQuizRoute
   '/competitions/$code/results': typeof CompetitionsCodeResultsRoute
   '/play/$op/$level': typeof PlayOpLevelRoute
   '/competitions/$code': typeof CompetitionsCodeIndexRoute
@@ -112,7 +128,9 @@ export interface FileRoutesById {
   '/fraction/$level': typeof FractionLevelRoute
   '/competitions/': typeof CompetitionsIndexRoute
   '/api/public/mirror-backfill': typeof ApiPublicMirrorBackfillRoute
+  '/competitions/$code/mc': typeof CompetitionsCodeMcRoute
   '/competitions/$code/play': typeof CompetitionsCodePlayRoute
+  '/competitions/$code/quiz': typeof CompetitionsCodeQuizRoute
   '/competitions/$code/results': typeof CompetitionsCodeResultsRoute
   '/play/$op/$level': typeof PlayOpLevelRoute
   '/competitions/$code/': typeof CompetitionsCodeIndexRoute
@@ -127,7 +145,9 @@ export interface FileRouteTypes {
     | '/fraction/$level'
     | '/competitions/'
     | '/api/public/mirror-backfill'
+    | '/competitions/$code/mc'
     | '/competitions/$code/play'
+    | '/competitions/$code/quiz'
     | '/competitions/$code/results'
     | '/play/$op/$level'
     | '/competitions/$code/'
@@ -140,7 +160,9 @@ export interface FileRouteTypes {
     | '/fraction/$level'
     | '/competitions'
     | '/api/public/mirror-backfill'
+    | '/competitions/$code/mc'
     | '/competitions/$code/play'
+    | '/competitions/$code/quiz'
     | '/competitions/$code/results'
     | '/play/$op/$level'
     | '/competitions/$code'
@@ -153,7 +175,9 @@ export interface FileRouteTypes {
     | '/fraction/$level'
     | '/competitions/'
     | '/api/public/mirror-backfill'
+    | '/competitions/$code/mc'
     | '/competitions/$code/play'
+    | '/competitions/$code/quiz'
     | '/competitions/$code/results'
     | '/play/$op/$level'
     | '/competitions/$code/'
@@ -167,7 +191,9 @@ export interface RootRouteChildren {
   FractionLevelRoute: typeof FractionLevelRoute
   CompetitionsIndexRoute: typeof CompetitionsIndexRoute
   ApiPublicMirrorBackfillRoute: typeof ApiPublicMirrorBackfillRoute
+  CompetitionsCodeMcRoute: typeof CompetitionsCodeMcRoute
   CompetitionsCodePlayRoute: typeof CompetitionsCodePlayRoute
+  CompetitionsCodeQuizRoute: typeof CompetitionsCodeQuizRoute
   CompetitionsCodeResultsRoute: typeof CompetitionsCodeResultsRoute
   PlayOpLevelRoute: typeof PlayOpLevelRoute
   CompetitionsCodeIndexRoute: typeof CompetitionsCodeIndexRoute
@@ -238,11 +264,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompetitionsCodeResultsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/competitions/$code/quiz': {
+      id: '/competitions/$code/quiz'
+      path: '/competitions/$code/quiz'
+      fullPath: '/competitions/$code/quiz'
+      preLoaderRoute: typeof CompetitionsCodeQuizRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/competitions/$code/play': {
       id: '/competitions/$code/play'
       path: '/competitions/$code/play'
       fullPath: '/competitions/$code/play'
       preLoaderRoute: typeof CompetitionsCodePlayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/competitions/$code/mc': {
+      id: '/competitions/$code/mc'
+      path: '/competitions/$code/mc'
+      fullPath: '/competitions/$code/mc'
+      preLoaderRoute: typeof CompetitionsCodeMcRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/mirror-backfill': {
@@ -263,7 +303,9 @@ const rootRouteChildren: RootRouteChildren = {
   FractionLevelRoute: FractionLevelRoute,
   CompetitionsIndexRoute: CompetitionsIndexRoute,
   ApiPublicMirrorBackfillRoute: ApiPublicMirrorBackfillRoute,
+  CompetitionsCodeMcRoute: CompetitionsCodeMcRoute,
   CompetitionsCodePlayRoute: CompetitionsCodePlayRoute,
+  CompetitionsCodeQuizRoute: CompetitionsCodeQuizRoute,
   CompetitionsCodeResultsRoute: CompetitionsCodeResultsRoute,
   PlayOpLevelRoute: PlayOpLevelRoute,
   CompetitionsCodeIndexRoute: CompetitionsCodeIndexRoute,

@@ -11,7 +11,26 @@ import {
 } from "@/lib/competitions.functions";
 import CompetitionLeaderboard from "@/components/CompetitionLeaderboard";
 import { COUNTRIES } from "@/lib/countries";
-import { getHostKey, getPlayerKey, getProfile, saveProfile } from "@/lib/player";
+import { getHostKey, getMcKey, getPlayerKey, getProfile, saveProfile } from "@/lib/player";
+
+async function shareLink(path: string, text: string) {
+  const url = `${window.location.origin}${path}`;
+  const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
+  if (nav.share) {
+    try {
+      await nav.share({ title: "Go-Q Quiz Live", text, url });
+    } catch {
+      /* dibatalkan */
+    }
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    alert("Tautan disalin!");
+  } catch {
+    alert(url);
+  }
+}
 import { supabase } from "@/integrations/supabase/client";
 import { DIFFICULTY_LABEL, OP_LABEL_ID, type CompOp } from "@/lib/competition-questions";
 
@@ -51,6 +70,8 @@ function Lobby() {
   const [loading, setLoading] = useState(true);
   const [playerKey, setPlayerKey] = useState("");
   const [hostKey, setHostKey] = useState<string | null>(null);
+  const [mcKey, setMcKey] = useState<string | null>(null);
+  const [choice, setChoice] = useState<"join" | null>(null);
 
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
@@ -70,6 +91,7 @@ function Lobby() {
   useEffect(() => {
     setPlayerKey(getPlayerKey());
     setHostKey(getHostKey(code.toUpperCase()));
+    setMcKey(getMcKey(code.toUpperCase()));
     const p = getProfile();
     if (p) {
       setName(p.name);
@@ -97,6 +119,7 @@ function Lobby() {
   }, [code, refresh]);
 
   const me = parts.find((p) => p.player_key === playerKey);
+  const isQuiz = comp?.kind === "quiz";
 
   const doJoin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,16 +169,47 @@ function Lobby() {
           {comp.host_name ? ` • Host: ${comp.host_name}` : ""}
         </p>
         <div className="mt-2 flex flex-wrap justify-center gap-1.5 text-[11px] font-semibold">
-          {(comp.ops as CompOp[]).map((o) => (
-            <span key={o} className="rounded-full bg-white/80 px-2.5 py-1">{OP_LABEL_ID[o] ?? o}</span>
-          ))}
-          <span className="rounded-full bg-white/80 px-2.5 py-1">{DIFFICULTY_LABEL[comp.difficulty]}</span>
+          {isQuiz ? (
+            <>
+              <span className="rounded-full bg-white/80 px-2.5 py-1">🎤 Quiz Live</span>
+              <span className="rounded-full bg-white/80 px-2.5 py-1">{comp.question_seconds ?? 20} detik/soal</span>
+            </>
+          ) : (
+            <>
+              {(comp.ops as CompOp[]).map((o) => (
+                <span key={o} className="rounded-full bg-white/80 px-2.5 py-1">{OP_LABEL_ID[o] ?? o}</span>
+              ))}
+              <span className="rounded-full bg-white/80 px-2.5 py-1">{DIFFICULTY_LABEL[comp.difficulty]}</span>
+            </>
+          )}
           <span className="rounded-full bg-white/80 px-2.5 py-1">{comp.input_type === "blind" ? "Blind" : "Choices"}</span>
           <span className="rounded-full bg-white/80 px-2.5 py-1">{comp.total_questions} soal</span>
-          <span className="rounded-full bg-white/80 px-2.5 py-1">{comp.duration_seconds} detik</span>
+          {!isQuiz && <span className="rounded-full bg-white/80 px-2.5 py-1">{comp.duration_seconds} detik</span>}
         </div>
 
-        {hostKey && comp.status !== "completed" && (
+        {isQuiz && (hostKey || mcKey) && comp.status !== "completed" && (
+          <div
+            className="mt-5 rounded-3xl border-4 border-white/70 p-4"
+            style={{ background: "color-mix(in oklab, var(--primary) 10%, white 90%)", boxShadow: "var(--shadow-soft)" }}
+          >
+            <p className="font-display text-lg font-bold text-foreground">🎛️ Panel Pembuat Quiz</p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-3">
+              <button type="button" onClick={() => shareLink(`/competitions/${comp.join_code}`, `Ikut Quiz Live "${comp.title}" di Go-Q! Kode: ${comp.join_code}`)} className="btn-pop rounded-full bg-gradient-to-r from-sky-500 to-blue-600 px-4 py-2.5 font-display font-bold text-white">
+                📤 Tautan Peserta
+              </button>
+              {mcKey && (
+                <button type="button" onClick={() => shareLink(`/competitions/${comp.join_code}/mc?k=${mcKey}`, `Tautan MC Quiz "${comp.title}" (rahasia, jangan disebar)`)} className="btn-pop rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-2.5 font-display font-bold text-white">
+                  🔑 Tautan MC
+                </button>
+              )}
+              <Link to="/competitions/$code/mc" params={{ code: comp.join_code }} search={{ k: mcKey ?? hostKey ?? undefined }} className="btn-pop rounded-full bg-gradient-to-r from-emerald-400 to-teal-600 px-4 py-2.5 text-center font-display font-bold text-white">
+                🎤 Buka Panel MC
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {!isQuiz && hostKey && comp.status !== "completed" && (
           <div
             className="mt-5 rounded-3xl border-4 border-white/70 p-4"
             style={{ background: "color-mix(in oklab, var(--primary) 10%, white 90%)", boxShadow: "var(--shadow-soft)" }}
@@ -197,6 +251,15 @@ function Lobby() {
           >
             🏆 Lihat Hasil Akhir
           </Link>
+        ) : isQuiz && !me && choice !== "join" ? (
+          <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
+            <button type="button" onClick={() => setChoice("join")} className="btn-pop rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600 px-6 py-3.5 font-display text-xl font-bold text-white shadow-[var(--shadow-fun)] border-4 border-white/70">
+              🚀 Ikut Lomba
+            </button>
+            <button type="button" onClick={() => document.getElementById("ranking")?.scrollIntoView({ behavior: "smooth" })} className="btn-pop rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-6 py-3.5 font-display text-xl font-bold text-white shadow-[var(--shadow-fun)] border-4 border-white/70">
+              🏆 Lihat Ranking
+            </button>
+          </div>
         ) : !me ? (
           <form
             onSubmit={doJoin}
@@ -226,6 +289,14 @@ function Lobby() {
               {busy ? "Mendaftar…" : "🚀 Gabung Lomba"}
             </button>
           </form>
+        ) : isQuiz ? (
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/competitions/$code/quiz", params: { code: comp.join_code } })}
+            className="btn-pop mt-5 w-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-600 px-6 py-3.5 font-display text-xl font-bold text-white shadow-[var(--shadow-fun)] border-4 border-white/70"
+          >
+            {comp.status === "live" ? "🎤 Masuk Layar Quiz!" : "🎤 Masuk & Tunggu MC"}
+          </button>
         ) : comp.status === "live" ? (
           <button
             type="button"
@@ -239,6 +310,8 @@ function Lobby() {
             Kamu sudah terdaftar 🎉 Tunggu host menekan Mulai ya!
           </p>
         )}
+
+        <div id="ranking" />
 
         <h2 className="mt-6 text-center font-display text-2xl font-bold text-foreground">🏅 Papan Peringkat</h2>
         <div className="mt-3">
