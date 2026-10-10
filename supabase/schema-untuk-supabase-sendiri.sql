@@ -163,3 +163,36 @@ create trigger participants_set_updated_at
 -- =====================================================================
 alter publication supabase_realtime add table public.competitions;
 alter publication supabase_realtime add table public.competition_participants;
+
+-- ================= TAMBAHAN: QUIZ LIVE =================
+alter table public.competitions add column if not exists kind text not null default 'speed';
+alter table public.competitions add column if not exists current_question integer not null default -1;
+alter table public.competitions add column if not exists question_started_at timestamptz;
+alter table public.competitions add column if not exists question_seconds integer not null default 20;
+alter table public.competition_secrets add column if not exists mc_key text;
+
+create table if not exists public.quiz_questions (
+  id uuid primary key default gen_random_uuid(),
+  competition_id uuid not null references public.competitions(id) on delete cascade,
+  position integer not null,
+  prompt text not null,
+  choices text[],
+  answer text not null,
+  created_at timestamptz not null default now(),
+  unique (competition_id, position)
+);
+grant all on public.quiz_questions to service_role;
+alter table public.quiz_questions enable row level security;
+
+create table if not exists public.quiz_answers (
+  id uuid primary key default gen_random_uuid(),
+  competition_id uuid not null references public.competitions(id) on delete cascade,
+  player_key text not null,
+  position integer not null,
+  correct boolean not null,
+  ms integer not null default 0,
+  created_at timestamptz not null default now(),
+  unique (competition_id, player_key, position)
+);
+grant all on public.quiz_answers to service_role;
+alter table public.quiz_answers enable row level security;

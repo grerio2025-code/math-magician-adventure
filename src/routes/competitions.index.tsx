@@ -77,17 +77,25 @@ function CompetitionCard({ c, count }: { c: CompetitionRow; count: number }) {
         ⏰ {fmtDate(c.start_at)} • 👥 {count} peserta • 🔑 Kode {c.join_code} {c.has_pin ? "• 🔒 PIN" : ""}
       </p>
       <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] font-semibold">
-        {(c.ops as CompOp[]).map((o) => (
-          <span key={o} className="rounded-full bg-white/80 px-2.5 py-1">
-            {OP_LABEL_ID[o] ?? o}
-          </span>
-        ))}
-        <span className="rounded-full bg-white/80 px-2.5 py-1">{DIFFICULTY_LABEL[c.difficulty]}</span>
+        {c.kind === "quiz" ? (
+          <span className="rounded-full bg-amber-200 px-2.5 py-1">🎤 Quiz Live</span>
+        ) : (
+          <>
+            {(c.ops as CompOp[]).map((o) => (
+              <span key={o} className="rounded-full bg-white/80 px-2.5 py-1">
+                {OP_LABEL_ID[o] ?? o}
+              </span>
+            ))}
+            <span className="rounded-full bg-white/80 px-2.5 py-1">{DIFFICULTY_LABEL[c.difficulty]}</span>
+          </>
+        )}
         <span className="rounded-full bg-white/80 px-2.5 py-1">
           {c.input_type === "blind" ? "Blind" : "Choices"}
         </span>
         <span className="rounded-full bg-white/80 px-2.5 py-1">{c.total_questions} soal</span>
-        <span className="rounded-full bg-white/80 px-2.5 py-1">{Math.round(c.duration_seconds / 60)} menit</span>
+        {c.kind !== "quiz" && (
+          <span className="rounded-full bg-white/80 px-2.5 py-1">{Math.round(c.duration_seconds / 60)} menit</span>
+        )}
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         <Link
