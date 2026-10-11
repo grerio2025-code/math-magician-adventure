@@ -28,6 +28,8 @@ export interface CompetitionRow {
   current_question?: number;
   question_started_at?: string | null;
   question_seconds?: number;
+  hide_prompt?: boolean;
+  auto_next?: boolean;
 }
 
 export interface ParticipantRow {
@@ -45,7 +47,7 @@ export interface ParticipantRow {
 }
 
 const PUBLIC_COLS =
-  "id, title, join_code, has_pin, start_at, ops, difficulty, difficulty_custom, input_type, duration_seconds, total_questions, status, question_seed, started_at, ended_at, host_name, created_at, kind, current_question, question_started_at, question_seconds";
+  "id, title, join_code, has_pin, start_at, ops, difficulty, difficulty_custom, input_type, duration_seconds, total_questions, status, question_seed, started_at, ended_at, host_name, created_at, kind, current_question, question_started_at, question_seconds, hide_prompt, auto_next";
 
 const PARTICIPANT_COLS =
   "id, competition_id, player_key, name, age, school, country_code, score, answered, seconds, finished_at";
@@ -574,6 +576,7 @@ export const getQuizState = createServerFn({ method: "GET" })
         .eq("position", comp.current_question)
         .maybeSingle();
       question = q ?? null;
+      if (question && comp.hide_prompt) question = { ...question, prompt: "" };
       if (data.playerKey) {
         const { data: a } = await db
           .from("quiz_answers")
@@ -634,13 +637,22 @@ export const getMcState = createServerFn({ method: "POST" })
 
 export const mcAdvance = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
-    z.object({ code: z.string().min(3).max(12), mcKey: z.string().min(8).max(64), action: z.enum(["start", "next", "finish"]) }).parse(d),
+    z.object({ code: z.string().min(3).max(12), mcKey: z.string().min(8).max(64), action: z.enum(["start", "next", "finish", "options"]), expectPos: z.number().int().optional(), hidePrompt: z.boolean().optional(), autoNext: z.boolean().optional() }).parse(d),
   )
   .handler(async ({ data }) => {
     const db = await admin();
     const comp = await mcGuard(db, data.code, data.mcKey);
     if (!comp) return { ok: false as const, error: "Tautan MC tidak valid." };
     const now = new Date().toISOString();
+    if (data.action === "options") {
+      const patch: Record<string, boolean> = {};
+      if (data.hidePrompt !== undefined) patch.hide_prompt = data.hidePrompt;
+      if (data.autoNext !== undefined) patch.auto_next = data.autoNext;
+      await db.from("competitions").update(patch).eq("id", comp.id);
+      return { ok: true as const };
+    }
+    if (data.action === "next" && data.expectPos !== undefined && data.expectPos !== comp.current_question)
+      return { ok: true as const };
     if (data.action === "finish") {
       await db.from("competitions").update({ status: "completed", ended_at: now }).eq("id", comp.id);
       return { ok: true as const };
@@ -712,4 +724,76 @@ export const submitQuizAnswer = createServerFn({ method: "POST" })
       })
       .eq("id", part.id);
     return { ok: true as const, correct };
+  });
+
+export const generateQuizQuestions = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({
+      topic: z.string().trim().min(2).max(200),
+      count: z.number().int().min(1).max(30),
+      inputType: z.enum(["blind", "choices"]),
+      level: z.enum(["beginner", "intermediate", "advance"]),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const key = process.env["LOVABLE_API_KEY"];
+    if (!key) return { ok: false as const, error: "Layanan AI belum tersedia." };
+    const lvl = { beginner: "mudah (anak SD kelas awal)", intermediate: "menengah", advance: "sulit/lanjutan" }[data.level];
+    const sys = data.inputType === "choices"
+      ? "Setiap soal punya 4 pilihan jawaban singkat, tepat satu benar. 'answer' harus sama persis dengan salah satu 'choices'."
+      : "Jawaban harus singkat (1-3 kata atau angka) agar mudah diketik. 'choices' kosong.";
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "system", content: `Kamu pembuat soal quiz berbahasa Indonesia untuk lomba anak. ${sys}` },
+          { role: "user", content: `Buat ${data.count} soal tentang "${data.topic}", tingkat kesulitan ${lvl}.` },
+        ],
+        tools: [{
+          type: "function",
+          function: {
+            name: "save_questions",
+            parameters: {
+              type: "object",
+              properties: {
+                questions: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      prompt: { type: "string" },
+                      choices: { type: "array", items: { type: "string" } },
+                      answer: { type: "string" },
+                    },
+                    required: ["prompt", "answer"],
+                  },
+                },
+              },
+              required: ["questions"],
+            },
+          },
+        }],
+        tool_choice: { type: "function", function: { name: "save_questions" } },
+      }),
+    });
+    if (res.status === 429) return { ok: false as const, error: "Terlalu banyak permintaan, coba sebentar lagi." };
+    if (res.status === 402) return { ok: false as const, error: "Kuota AI habis." };
+    if (!res.ok) return { ok: false as const, error: "Gagal membuat soal. Coba lagi." };
+    try {
+      const j: any = await res.json();
+      const args = JSON.parse(j.choices[0].message.tool_calls[0].function.arguments);
+      const qs = (args.questions as any[])
+        .map((q) => ({
+          prompt: String(q.prompt ?? "").slice(0, 500),
+          answer: String(q.answer ?? "").slice(0, 200),
+          choices: Array.isArray(q.choices) ? q.choices.map((c: any) => String(c).slice(0, 200)).slice(0, 4) : [],
+        }))
+        .filter((q) => q.prompt && q.answer)
+        .slice(0, data.count);
+      return { ok: true as const, questions: qs };
+    } catch {
+      return { ok: false as const, error: "Gagal membaca hasil AI. Coba lagi." };
+    }
   });

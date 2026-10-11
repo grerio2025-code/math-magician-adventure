@@ -196,3 +196,7 @@ create table if not exists public.quiz_answers (
 );
 grant all on public.quiz_answers to service_role;
 alter table public.quiz_answers enable row level security;
+
+-- Opsi MC Quiz Live
+alter table public.competitions add column if not exists hide_prompt boolean not null default false;
+alter table public.competitions add column if not exists auto_next boolean not null default false;
