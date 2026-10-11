@@ -119,7 +119,11 @@ function QuizPlay() {
               <span className="rounded-full bg-white px-3 py-1">Soal {q.position + 1}/{comp.total_questions}</span>
               <span className="rounded-full bg-white px-3 py-1">⏱️ {Math.ceil(left)}</span>
             </div>
-            <p className="mt-5 whitespace-pre-wrap font-display text-2xl md:text-3xl font-bold text-foreground">{q.prompt}</p>
+            {q.prompt ? (
+              <p className="mt-5 whitespace-pre-wrap font-display text-2xl md:text-3xl font-bold text-foreground">{q.prompt}</p>
+            ) : (
+              <p className="mt-5 font-display text-xl font-bold text-muted-foreground">🎧 Dengarkan soal dari MC</p>
+            )}
             {answered || timeUp ? (
               <div className="mt-5">
                 {result?.pos === q.position && (

@@ -1,0 +1,1 @@
+ALTER TABLE public.competitions ADD COLUMN IF NOT EXISTS hide_prompt boolean NOT NULL DEFAULT false, ADD COLUMN IF NOT EXISTS auto_next boolean NOT NULL DEFAULT false;
