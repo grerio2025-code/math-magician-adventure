@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getMcState, mcAdvance, type CompetitionRow, type ParticipantRow } from "@/lib/competitions.functions";
 import CompetitionLeaderboard from "@/components/CompetitionLeaderboard";
 import { getMcKey, saveMcKey } from "@/lib/player";
@@ -79,6 +79,27 @@ function McPanel() {
     return () => window.clearInterval(id);
   }, [comp]);
 
+  const autoRef = useRef(-2);
+  useEffect(() => {
+    if (!key || !comp?.auto_next || comp.status !== "live" || !comp.question_started_at || left > 0) return;
+    const pos = comp.current_question ?? -1;
+    const elapsed = (Date.now() - new Date(comp.question_started_at).getTime()) / 1000;
+    if (pos < 0 || autoRef.current === pos || elapsed < (comp.question_seconds ?? 20)) return;
+    autoRef.current = pos;
+    const id = window.setTimeout(async () => {
+      await advance({ data: { code, mcKey: key, action: "next", expectPos: pos } });
+      await refresh();
+    }, 1500);
+    return () => window.clearTimeout(id);
+  }, [left, comp, key, advance, code, refresh]);
+
+  const setOpt = async (patch: { hidePrompt?: boolean; autoNext?: boolean }) => {
+    if (!key || !comp) return;
+    setComp({ ...comp, ...(patch.hidePrompt !== undefined ? { hide_prompt: patch.hidePrompt } : {}), ...(patch.autoNext !== undefined ? { auto_next: patch.autoNext } : {}) });
+    await advance({ data: { code, mcKey: key, action: "options", ...patch } });
+    await refresh();
+  };
+
   const act = async (action: "start" | "next" | "finish") => {
     if (!key) return;
     if (action === "finish" && !confirm("Selesaikan quiz sekarang?")) return;
@@ -110,6 +131,20 @@ function McPanel() {
         <p className="text-center text-sm font-semibold text-muted-foreground">
           {comp.title} • Kode {comp.join_code} • 👥 {parts.length} peserta
         </p>
+
+        {comp.status !== "completed" && (
+          <div className="mt-5 grid gap-2 rounded-3xl border-4 border-white/70 bg-white/80 p-4 font-semibold text-foreground">
+            <label className="flex items-center gap-3">
+              <input type="checkbox" className="h-5 w-5" checked={!!comp.hide_prompt} onChange={(e) => setOpt({ hidePrompt: e.target.checked })} />
+              🙈 Sembunyikan teks soal di layar peserta (peserta hanya mendengar MC)
+            </label>
+            <label className="flex items-center gap-3">
+              <input type="checkbox" className="h-5 w-5" checked={!!comp.auto_next} onChange={(e) => setOpt({ autoNext: e.target.checked })} />
+              ⏭️ Auto Next — lanjut otomatis ke soal berikutnya saat waktu habis
+            </label>
+            {comp.auto_next && <p className="text-xs text-muted-foreground">Biarkan panel MC ini tetap terbuka agar Auto Next berjalan.</p>}
+          </div>
+        )}
 
         <div className="mt-5 rounded-3xl border-4 border-white/70 p-6 text-center" style={{ background: "oklch(1 0 0 / 0.88)", boxShadow: "var(--shadow-fun)" }}>
           {comp.status === "upcoming" && (

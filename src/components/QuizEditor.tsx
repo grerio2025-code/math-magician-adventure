@@ -1,3 +1,7 @@
+import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { generateQuizQuestions } from "@/lib/competitions.functions";
+
 export interface QuizItem {
   prompt: string;
   choices: string[];
@@ -26,6 +30,41 @@ export default function QuizEditor({
   items: QuizItem[];
   setItems: (fn: (prev: QuizItem[]) => QuizItem[]) => void;
 }) {
+  const gen = useServerFn(generateQuizQuestions);
+  const [open, setOpen] = useState(false);
+  const [topic, setTopic] = useState("");
+  const [count, setCount] = useState(10);
+  const [gType, setGType] = useState<"blind" | "choices">(inputType);
+  const [level, setLevel] = useState<"beginner" | "intermediate" | "advance">("beginner");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const runGen = async () => {
+    if (topic.trim().length < 2) return setErr("Isi topik dulu ya.");
+    setBusy(true);
+    setErr("");
+    try {
+      const r = await gen({ data: { topic, count: Math.max(1, Math.min(30, count || 1)), inputType: gType, level } });
+      if (!r.ok) return setErr(r.error);
+      const newItems: QuizItem[] = r.questions.map((q) => {
+        if (gType === "choices") {
+          let ch = q.choices.length >= 2 ? q.choices : [q.answer, ""];
+          let idx = ch.findIndex((c) => c.trim().toLowerCase() === q.answer.trim().toLowerCase());
+          if (idx < 0) { ch = [q.answer, ...ch].slice(0, 4); idx = 0; }
+          return { prompt: q.prompt, choices: ch, correct: idx, answer: q.answer };
+        }
+        return { prompt: q.prompt, choices: ["", "", ""], correct: 0, answer: q.answer };
+      });
+      setInputType(gType);
+      setItems((prev) => [...prev.filter((p) => p.prompt.trim()), ...newItems]);
+      setOpen(false);
+    } catch {
+      setErr("Gagal membuat soal. Coba lagi.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const update = (i: number, patch: Partial<QuizItem>) =>
     setItems((prev) => prev.map((it, j) => (j === i ? { ...it, ...patch } : it)));
   const move = (i: number, d: number) =>
@@ -71,7 +110,57 @@ export default function QuizEditor({
       </div>
 
       <div className="grid gap-3">
-        <span className={label}>Daftar Soal ({items.length})</span>
+        <div className="flex items-center justify-between gap-2">
+          <span className={label}>Daftar Soal ({items.length})</span>
+          <button type="button" onClick={() => { setGType(inputType); setOpen(true); }} className="btn-pop rounded-full px-4 py-2 font-display text-sm font-bold" style={{ background: "var(--gradient-op-minus)", color: "white" }}>
+            ✨ Buat Soal Otomatis
+          </button>
+        </div>
+        {open && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4" onClick={() => !busy && setOpen(false)}>
+            <div className="grid w-full max-w-md gap-3 rounded-3xl border-4 border-white bg-background p-5" onClick={(e) => e.stopPropagation()}>
+              <h3 className="font-display text-2xl font-bold text-foreground">✨ Buat Soal Otomatis</h3>
+              <div>
+                <label className={label} htmlFor="gtopic">Topik</label>
+                <input id="gtopic" className={field} value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="cth. Hewan, Sejarah Indonesia, Pecahan" />
+              </div>
+              <div>
+                <label className={label} htmlFor="gcount">Jumlah Soal (maks 30)</label>
+                <input id="gcount" type="number" min={1} max={30} className={field} value={count} onChange={(e) => setCount(Number(e.target.value))} />
+              </div>
+              <div>
+                <span className={label}>Jenis Jawaban</span>
+                <div className="flex gap-2">
+                  {(["blind", "choices"] as const).map((v) => (
+                    <button key={v} type="button" onClick={() => setGType(v)} className="btn-pop flex-1 rounded-2xl px-3 py-2 font-display text-sm font-bold"
+                      style={gType === v ? { background: "var(--gradient-op-minus)", color: "white" } : { background: "white", color: "var(--foreground)" }}>
+                      {v === "blind" ? "Blind" : "Choices"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <span className={label}>Tingkat Kesulitan</span>
+                <div className="flex gap-2">
+                  {([["beginner", "Beginner"], ["intermediate", "Intermediate"], ["advance", "Advance"]] as const).map(([v, t]) => (
+                    <button key={v} type="button" onClick={() => setLevel(v)} className="btn-pop flex-1 rounded-2xl px-2 py-2 font-display text-sm font-bold"
+                      style={level === v ? { background: "var(--gradient-op-minus)", color: "white" } : { background: "white", color: "var(--foreground)" }}>
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {err && <p className="rounded-2xl bg-destructive/10 px-3 py-2 text-sm font-bold text-destructive">{err}</p>}
+              <div className="flex gap-2">
+                <button type="button" disabled={busy} onClick={() => setOpen(false)} className="btn-pop flex-1 rounded-full bg-white px-4 py-2.5 font-display font-bold text-foreground">Batal</button>
+                <button type="button" disabled={busy} onClick={runGen} className="btn-pop flex-1 rounded-full px-4 py-2.5 font-display font-bold disabled:opacity-60" style={{ background: "var(--gradient-op-minus)", color: "white" }}>
+                  {busy ? "Membuat…" : "Buat Soal"}
+                </button>
+              </div>
+              <p className="text-xs font-semibold text-muted-foreground">Soal hasil otomatis ditambahkan ke daftar dan tetap bisa Anda ubah.</p>
+            </div>
+          </div>
+        )}
         {items.map((it, i) => (
           <div key={i} className="grid gap-2 rounded-2xl border-4 border-white bg-white/70 p-3">
             <div className="flex items-center justify-between gap-2">
