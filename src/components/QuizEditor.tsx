@@ -49,7 +49,7 @@ export default function QuizEditor({
       const newItems: QuizItem[] = r.questions.map((q) => {
         if (gType === "choices") {
           let ch = q.choices.length >= 2 ? q.choices : [q.answer, ""];
-          let idx = ch.findIndex((c) => c.trim().toLowerCase() === q.answer.trim().toLowerCase());
+          let idx = ch.findIndex((c: string) => c.trim().toLowerCase() === q.answer.trim().toLowerCase());
           if (idx < 0) { ch = [q.answer, ...ch].slice(0, 4); idx = 0; }
           return { prompt: q.prompt, choices: ch, correct: idx, answer: q.answer };
         }
