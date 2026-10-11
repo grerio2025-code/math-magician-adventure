@@ -104,6 +104,7 @@ export type Database = {
       }
       competitions: {
         Row: {
+          auto_next: boolean
           created_at: string
           current_question: number
           difficulty: string
@@ -111,6 +112,7 @@ export type Database = {
           duration_seconds: number
           ended_at: string | null
           has_pin: boolean
+          hide_prompt: boolean
           host_name: string | null
           id: string
           input_type: string
@@ -128,6 +130,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auto_next?: boolean
           created_at?: string
           current_question?: number
           difficulty?: string
@@ -135,6 +138,7 @@ export type Database = {
           duration_seconds?: number
           ended_at?: string | null
           has_pin?: boolean
+          hide_prompt?: boolean
           host_name?: string | null
           id?: string
           input_type?: string
@@ -152,6 +156,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auto_next?: boolean
           created_at?: string
           current_question?: number
           difficulty?: string
@@ -159,6 +164,7 @@ export type Database = {
           duration_seconds?: number
           ended_at?: string | null
           has_pin?: boolean
+          hide_prompt?: boolean
           host_name?: string | null
           id?: string
           input_type?: string
