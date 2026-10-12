@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { Mic } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -302,6 +304,9 @@ function Home() {
           >
             🏁 Kompetisi
           </Link>
+          <Button asChild className="btn-pop h-auto rounded-full border-4 border-card/70 px-8 py-4 font-display text-xl font-bold shadow-[var(--shadow-fun)]">
+            <Link to="/competitions/new" search={{ kind: "quiz" }}><Mic /> Quiz Live</Link>
+          </Button>
           <button
             type="button"
             onClick={shareApp}

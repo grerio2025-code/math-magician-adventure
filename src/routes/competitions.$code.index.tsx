@@ -10,6 +10,8 @@ import {
   type ParticipantRow,
 } from "@/lib/competitions.functions";
 import CompetitionLeaderboard from "@/components/CompetitionLeaderboard";
+import CompetitionPoster from "@/components/CompetitionPoster";
+import { Button } from "@/components/ui/button";
 import { COUNTRIES } from "@/lib/countries";
 import { getHostKey, getMcKey, getPlayerKey, getProfile, saveProfile } from "@/lib/player";
 
@@ -187,6 +189,11 @@ function Lobby() {
           {!isQuiz && <span className="rounded-full bg-white/80 px-2.5 py-1">{comp.duration_seconds} detik</span>}
         </div>
 
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
+          <Button variant="outline" className="btn-pop h-auto rounded-full border-2 border-border bg-card px-5 py-3 font-display font-bold" onClick={() => shareLink(`/competitions/${comp.join_code}`, `Ikut lomba "${comp.title}" di Go-Q! Kode: ${comp.join_code}`)}>📤 Tautan Peserta</Button>
+          <CompetitionPoster competition={comp} />
+        </div>
+
         {isQuiz && (hostKey || mcKey) && comp.status !== "completed" && (
           <div
             className="mt-5 rounded-3xl border-4 border-white/70 p-4"
@@ -194,9 +201,6 @@ function Lobby() {
           >
             <p className="font-display text-lg font-bold text-foreground">🎛️ Panel Pembuat Quiz</p>
             <div className="mt-2 grid gap-2 sm:grid-cols-3">
-              <button type="button" onClick={() => shareLink(`/competitions/${comp.join_code}`, `Ikut Quiz Live "${comp.title}" di Go-Q! Kode: ${comp.join_code}`)} className="btn-pop rounded-full bg-gradient-to-r from-sky-500 to-blue-600 px-4 py-2.5 font-display font-bold text-white">
-                📤 Tautan Peserta
-              </button>
               {mcKey && (
                 <button type="button" onClick={() => shareLink(`/competitions/${comp.join_code}/mc?k=${mcKey}`, `Tautan MC Quiz "${comp.title}" (rahasia, jangan disebar)`)} className="btn-pop rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-2.5 font-display font-bold text-white">
                   🔑 Tautan MC

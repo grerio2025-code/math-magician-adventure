@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Generate competition invitation posters entirely in the browser with a bundled QR encoder and canvas; share only the public participant URL, never MC or host credentials.
+- Use the creation page's validated kind search parameter for the home Quiz Live shortcut so the existing editor is reused.
