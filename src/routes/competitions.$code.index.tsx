@@ -10,6 +10,8 @@ import {
   type ParticipantRow,
 } from "@/lib/competitions.functions";
 import CompetitionLeaderboard from "@/components/CompetitionLeaderboard";
+import CompetitionPoster from "@/components/CompetitionPoster";
+import { Button } from "@/components/ui/button";
 import { COUNTRIES } from "@/lib/countries";
 import { getHostKey, getMcKey, getPlayerKey, getProfile, saveProfile } from "@/lib/player";
 
@@ -185,6 +187,11 @@ function Lobby() {
           <span className="rounded-full bg-white/80 px-2.5 py-1">{comp.input_type === "blind" ? "Blind" : "Choices"}</span>
           <span className="rounded-full bg-white/80 px-2.5 py-1">{comp.total_questions} soal</span>
           {!isQuiz && <span className="rounded-full bg-white/80 px-2.5 py-1">{comp.duration_seconds} detik</span>}
+        </div>
+
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
+          <Button variant="outline" className="btn-pop h-auto rounded-full border-2 border-border bg-card px-5 py-3 font-display font-bold" onClick={() => shareLink(`/competitions/${comp.join_code}`, `Ikut lomba "${comp.title}" di Go-Q! Kode: ${comp.join_code}`)}>📤 Tautan Peserta</Button>
+          <CompetitionPoster competition={comp} />
         </div>
 
         {isQuiz && (hostKey || mcKey) && comp.status !== "completed" && (

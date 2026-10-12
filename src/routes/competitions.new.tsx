@@ -7,6 +7,7 @@ import { saveHostKey, saveMcKey } from "@/lib/player";
 import QuizEditor, { emptyItem, type QuizItem } from "@/components/QuizEditor";
 
 export const Route = createFileRoute("/competitions/new")({
+  validateSearch: (search: Record<string, unknown>): { kind?: "quiz" } => ({ kind: search.kind === "quiz" ? "quiz" : undefined }),
   head: () => ({
     meta: [
       { title: "Buat Kompetisi Baru — Go-Q" },
@@ -32,6 +33,7 @@ const field =
   "w-full rounded-2xl border-4 border-white/70 bg-white/90 px-4 py-2.5 font-semibold text-foreground outline-none";
 
 function NewCompetition() {
+  const search = Route.useSearch();
   const navigate = useNavigate();
   const create = useServerFn(createCompetition);
 
@@ -50,7 +52,7 @@ function NewCompetition() {
   const [missingNumber, setMissingNumber] = useState(false);
   const [hostName, setHostName] = useState("");
   const makeQuiz = useServerFn(createQuiz);
-  const [kind, setKind] = useState<"speed" | "quiz">("speed");
+  const [kind, setKind] = useState<"speed" | "quiz">(search.kind ?? "speed");
   const [qSeconds, setQSeconds] = useState(20);
   const [items, setItems] = useState<QuizItem[]>([emptyItem()]);
   // Generated after mount so server and client markup match (no hydration mismatch).
