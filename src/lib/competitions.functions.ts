@@ -736,64 +736,95 @@ export const generateQuizQuestions = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data }) => {
-    const key = process.env["LOVABLE_API_KEY"];
-    if (!key) return { ok: false as const, error: "Layanan AI belum tersedia." };
+    const geminiKey = process.env["GEMINI_API_KEY"];
+    const lovableKey = process.env["LOVABLE_API_KEY"];
+    if (!geminiKey && !lovableKey) return { ok: false as const, error: "Layanan AI belum tersedia." };
     const lvl = { beginner: "mudah (anak SD kelas awal)", intermediate: "menengah", advance: "sulit/lanjutan" }[data.level];
     const sys = data.inputType === "choices"
       ? "Setiap soal punya 4 pilihan jawaban singkat, tepat satu benar. 'answer' harus sama persis dengan salah satu 'choices'."
       : "Jawaban harus singkat (1-3 kata atau angka) agar mudah diketik. 'choices' kosong.";
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: `Kamu pembuat soal quiz berbahasa Indonesia untuk lomba anak. ${sys}` },
-          { role: "user", content: `Buat ${data.count} soal tentang "${data.topic}", tingkat kesulitan ${lvl}.` },
-        ],
-        tools: [{
-          type: "function",
-          function: {
-            name: "save_questions",
-            parameters: {
-              type: "object",
-              properties: {
-                questions: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      prompt: { type: "string" },
-                      choices: { type: "array", items: { type: "string" } },
-                      answer: { type: "string" },
-                    },
-                    required: ["prompt", "answer"],
-                  },
-                },
+    const questionSchema = {
+      type: "object",
+      properties: {
+        prompt: { type: "string" },
+        choices: { type: "array", items: { type: "string" } },
+        answer: { type: "string" },
+      },
+      required: ["prompt", "answer"],
+    };
+    let rawQuestions: any[] | null = null;
+    if (geminiKey) {
+      // Gemini API langsung (kunci milik pengguna, mis. di Netlify)
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: `Kamu pembuat soal quiz berbahasa Indonesia untuk lomba anak. ${sys}` }] },
+            contents: [{ parts: [{ text: `Buat ${data.count} soal tentang "${data.topic}", tingkat kesulitan ${lvl}.` }] }],
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: "object",
+                properties: { questions: { type: "array", items: questionSchema } },
+                required: ["questions"],
               },
-              required: ["questions"],
             },
-          },
-        }],
-        tool_choice: { type: "function", function: { name: "save_questions" } },
-      }),
-    });
-    if (res.status === 429) return { ok: false as const, error: "Terlalu banyak permintaan, coba sebentar lagi." };
-    if (res.status === 402) return { ok: false as const, error: "Kuota AI habis." };
-    if (!res.ok) return { ok: false as const, error: "Gagal membuat soal. Coba lagi." };
-    try {
-      const j: any = await res.json();
-      const args = JSON.parse(j.choices[0].message.tool_calls[0].function.arguments);
-      const qs = (args.questions as any[])
-        .map((q) => ({
-          prompt: String(q.prompt ?? "").slice(0, 500),
-          answer: String(q.answer ?? "").slice(0, 200),
-          choices: Array.isArray(q.choices) ? q.choices.map((c: any) => String(c).slice(0, 200)).slice(0, 4) : [],
-        }))
-        .filter((q) => q.prompt && q.answer)
-        .slice(0, data.count);
-      return { ok: true as const, questions: qs };
-    } catch {
-      return { ok: false as const, error: "Gagal membaca hasil AI. Coba lagi." };
+          }),
+        },
+      );
+      if (res.status === 429) return { ok: false as const, error: "Terlalu banyak permintaan, coba sebentar lagi." };
+      if (res.status === 400 || res.status === 403) return { ok: false as const, error: "Kunci Gemini tidak valid." };
+      if (!res.ok) return { ok: false as const, error: "Gagal membuat soal. Coba lagi." };
+      try {
+        const j: any = await res.json();
+        rawQuestions = JSON.parse(j.candidates[0].content.parts[0].text).questions;
+      } catch {
+        return { ok: false as const, error: "Gagal membaca hasil AI. Coba lagi." };
+      }
+    } else {
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: `Kamu pembuat soal quiz berbahasa Indonesia untuk lomba anak. ${sys}` },
+            { role: "user", content: `Buat ${data.count} soal tentang "${data.topic}", tingkat kesulitan ${lvl}.` },
+          ],
+          tools: [{
+            type: "function",
+            function: {
+              name: "save_questions",
+              parameters: {
+                type: "object",
+                properties: { questions: { type: "array", items: questionSchema } },
+                required: ["questions"],
+              },
+            },
+          }],
+          tool_choice: { type: "function", function: { name: "save_questions" } },
+        }),
+      });
+      if (res.status === 429) return { ok: false as const, error: "Terlalu banyak permintaan, coba sebentar lagi." };
+      if (res.status === 402) return { ok: false as const, error: "Kuota AI habis." };
+      if (!res.ok) return { ok: false as const, error: "Gagal membuat soal. Coba lagi." };
+      try {
+        const j: any = await res.json();
+        rawQuestions = JSON.parse(j.choices[0].message.tool_calls[0].function.arguments).questions;
+      } catch {
+        return { ok: false as const, error: "Gagal membaca hasil AI. Coba lagi." };
+      }
     }
+    const qs = (rawQuestions ?? [])
+      .map((q) => ({
+        prompt: String(q.prompt ?? "").slice(0, 500),
+        answer: String(q.answer ?? "").slice(0, 200),
+        choices: Array.isArray(q.choices) ? q.choices.map((c: any) => String(c).slice(0, 200)).slice(0, 4) : [],
+      }))
+      .filter((q) => q.prompt && q.answer)
+      .slice(0, data.count);
+    if (qs.length === 0) return { ok: false as const, error: "AI tidak menghasilkan soal. Coba lagi." };
+    return { ok: true as const, questions: qs };
   });
