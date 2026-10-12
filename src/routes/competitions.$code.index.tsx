@@ -201,9 +201,6 @@ function Lobby() {
           >
             <p className="font-display text-lg font-bold text-foreground">🎛️ Panel Pembuat Quiz</p>
             <div className="mt-2 grid gap-2 sm:grid-cols-3">
-              <button type="button" onClick={() => shareLink(`/competitions/${comp.join_code}`, `Ikut Quiz Live "${comp.title}" di Go-Q! Kode: ${comp.join_code}`)} className="btn-pop rounded-full bg-gradient-to-r from-sky-500 to-blue-600 px-4 py-2.5 font-display font-bold text-white">
-                📤 Tautan Peserta
-              </button>
               {mcKey && (
                 <button type="button" onClick={() => shareLink(`/competitions/${comp.join_code}/mc?k=${mcKey}`, `Tautan MC Quiz "${comp.title}" (rahasia, jangan disebar)`)} className="btn-pop rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-2.5 font-display font-bold text-white">
                   🔑 Tautan MC
