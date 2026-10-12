@@ -13,6 +13,8 @@ export const Route = createFileRoute("/play/$op/$level")({
       { name: "description", content: "Mainkan level berhitung Go-Q dan raih skor tertinggi!" },
       { property: "og:title", content: "Bermain — Go-Q" },
       { property: "og:description", content: "Selesaikan 50 soal dan catat waktumu." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: PlayRoute,

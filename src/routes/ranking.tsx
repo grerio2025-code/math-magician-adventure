@@ -10,6 +10,8 @@ export const Route = createFileRoute("/ranking")({
       { name: "description", content: "Papan skor Go-Q: lihat pemain terbaik dan waktu tercepat." },
       { property: "og:title", content: "Ranking — Go-Q" },
       { property: "og:description", content: "Skor tertinggi & waktu tercepat pemain Go-Q." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: RankingPage,
