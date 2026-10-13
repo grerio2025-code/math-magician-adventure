@@ -1,0 +1,2 @@
+ALTER TABLE public.competitions DROP CONSTRAINT IF EXISTS competitions_total_check;
+ALTER TABLE public.competitions ADD CONSTRAINT competitions_total_check CHECK (total_questions >= 1 AND total_questions <= 200);
