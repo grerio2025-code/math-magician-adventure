@@ -756,13 +756,13 @@ export const generateQuizQuestions = createServerFn({ method: "POST" })
     if (geminiKey) {
       // Gemini API langsung (kunci milik pengguna, mis. di Netlify)
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey.trim() },
           body: JSON.stringify({
             systemInstruction: { parts: [{ text: `Kamu pembuat soal quiz berbahasa Indonesia untuk lomba anak. ${sys}` }] },
-            contents: [{ parts: [{ text: `Buat ${data.count} soal tentang "${data.topic}", tingkat kesulitan ${lvl}.` }] }],
+            contents: [{ role: "user", parts: [{ text: `Buat ${data.count} soal tentang "${data.topic}", tingkat kesulitan ${lvl}.` }] }],
             generationConfig: {
               responseMimeType: "application/json",
               responseSchema: {
@@ -774,9 +774,11 @@ export const generateQuizQuestions = createServerFn({ method: "POST" })
           }),
         },
       );
-      if (res.status === 429) return { ok: false as const, error: "Terlalu banyak permintaan, coba sebentar lagi." };
-      if (res.status === 400 || res.status === 403) return { ok: false as const, error: "Kunci Gemini tidak valid." };
-      if (!res.ok) return { ok: false as const, error: "Gagal membuat soal. Coba lagi." };
+      if (!res.ok) console.error("Gemini error", res.status, (await res.clone().text()).slice(0, 500));
+      if (res.status === 429) return { ok: false as const, error: "Terlalu banyak permintaan / kuota Gemini habis, coba sebentar lagi." };
+      if (res.status === 400 || res.status === 401 || res.status === 403)
+        return { ok: false as const, error: "Kunci Gemini ditolak. Periksa GEMINI_API_KEY di Netlify." };
+      if (!res.ok) return { ok: false as const, error: `Gagal membuat soal (Gemini ${res.status}). Coba lagi.` };
       try {
         const j: any = await res.json();
         rawQuestions = JSON.parse(j.candidates[0].content.parts[0].text).questions;
