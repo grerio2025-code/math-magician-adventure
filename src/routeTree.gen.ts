@@ -9,23 +9,23 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as RankingRouteImport } from './routes/ranking'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as CompetitionsIndexRouteImport } from './routes/competitions.index'
-import { Route as CompetitionsNewRouteImport } from './routes/competitions.new'
 import { Route as FractionLevelRouteImport } from './routes/fraction.$level'
-import { Route as ApiPublicMirrorBackfillRouteImport } from './routes/api/public/mirror-backfill'
+import { Route as CompetitionsNewRouteImport } from './routes/competitions.new'
 import { Route as CompetitionsCodeIndexRouteImport } from './routes/competitions.$code.index'
-import { Route as CompetitionsCodeMcRouteImport } from './routes/competitions.$code.mc'
-import { Route as CompetitionsCodePlayRouteImport } from './routes/competitions.$code.play'
-import { Route as CompetitionsCodeQuizRouteImport } from './routes/competitions.$code.quiz'
-import { Route as CompetitionsCodeResultsRouteImport } from './routes/competitions.$code.results'
 import { Route as PlayOpLevelRouteImport } from './routes/play.$op.$level'
+import { Route as CompetitionsCodeResultsRouteImport } from './routes/competitions.$code.results'
+import { Route as CompetitionsCodeQuizRouteImport } from './routes/competitions.$code.quiz'
+import { Route as CompetitionsCodePlayRouteImport } from './routes/competitions.$code.play'
+import { Route as CompetitionsCodeMcRouteImport } from './routes/competitions.$code.mc'
+import { Route as ApiPublicMirrorBackfillRouteImport } from './routes/api/public/mirror-backfill'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const RankingRoute = RankingRouteImport.update({
+  id: '/ranking',
+  path: '/ranking',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
@@ -33,9 +33,9 @@ const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
   path: '/privacy-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RankingRoute = RankingRouteImport.update({
-  id: '/ranking',
-  path: '/ranking',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompetitionsIndexRoute = CompetitionsIndexRouteImport.update({
@@ -43,19 +43,14 @@ const CompetitionsIndexRoute = CompetitionsIndexRouteImport.update({
   path: '/competitions/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CompetitionsNewRoute = CompetitionsNewRouteImport.update({
-  id: '/competitions/new',
-  path: '/competitions/new',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const FractionLevelRoute = FractionLevelRouteImport.update({
   id: '/fraction/$level',
   path: '/fraction/$level',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicMirrorBackfillRoute = ApiPublicMirrorBackfillRouteImport.update({
-  id: '/api/public/mirror-backfill',
-  path: '/api/public/mirror-backfill',
+const CompetitionsNewRoute = CompetitionsNewRouteImport.update({
+  id: '/competitions/new',
+  path: '/competitions/new',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompetitionsCodeIndexRoute = CompetitionsCodeIndexRouteImport.update({
@@ -63,19 +58,9 @@ const CompetitionsCodeIndexRoute = CompetitionsCodeIndexRouteImport.update({
   path: '/competitions/$code/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CompetitionsCodeMcRoute = CompetitionsCodeMcRouteImport.update({
-  id: '/competitions/$code/mc',
-  path: '/competitions/$code/mc',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CompetitionsCodePlayRoute = CompetitionsCodePlayRouteImport.update({
-  id: '/competitions/$code/play',
-  path: '/competitions/$code/play',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CompetitionsCodeQuizRoute = CompetitionsCodeQuizRouteImport.update({
-  id: '/competitions/$code/quiz',
-  path: '/competitions/$code/quiz',
+const PlayOpLevelRoute = PlayOpLevelRouteImport.update({
+  id: '/play/$op/$level',
+  path: '/play/$op/$level',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompetitionsCodeResultsRoute = CompetitionsCodeResultsRouteImport.update({
@@ -83,9 +68,24 @@ const CompetitionsCodeResultsRoute = CompetitionsCodeResultsRouteImport.update({
   path: '/competitions/$code/results',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PlayOpLevelRoute = PlayOpLevelRouteImport.update({
-  id: '/play/$op/$level',
-  path: '/play/$op/$level',
+const CompetitionsCodeQuizRoute = CompetitionsCodeQuizRouteImport.update({
+  id: '/competitions/$code/quiz',
+  path: '/competitions/$code/quiz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompetitionsCodePlayRoute = CompetitionsCodePlayRouteImport.update({
+  id: '/competitions/$code/play',
+  path: '/competitions/$code/play',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompetitionsCodeMcRoute = CompetitionsCodeMcRouteImport.update({
+  id: '/competitions/$code/mc',
+  path: '/competitions/$code/mc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicMirrorBackfillRoute = ApiPublicMirrorBackfillRouteImport.update({
+  id: '/api/public/mirror-backfill',
+  path: '/api/public/mirror-backfill',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -201,11 +201,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/ranking': {
+      id: '/ranking'
+      path: '/ranking'
+      fullPath: '/ranking'
+      preLoaderRoute: typeof RankingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy-policy': {
@@ -215,11 +215,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/ranking': {
-      id: '/ranking'
-      path: '/ranking'
-      fullPath: '/ranking'
-      preLoaderRoute: typeof RankingRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/competitions/': {
@@ -229,13 +229,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompetitionsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/competitions/new': {
-      id: '/competitions/new'
-      path: '/competitions/new'
-      fullPath: '/competitions/new'
-      preLoaderRoute: typeof CompetitionsNewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/fraction/$level': {
       id: '/fraction/$level'
       path: '/fraction/$level'
@@ -243,11 +236,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FractionLevelRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/mirror-backfill': {
-      id: '/api/public/mirror-backfill'
-      path: '/api/public/mirror-backfill'
-      fullPath: '/api/public/mirror-backfill'
-      preLoaderRoute: typeof ApiPublicMirrorBackfillRouteImport
+    '/competitions/new': {
+      id: '/competitions/new'
+      path: '/competitions/new'
+      fullPath: '/competitions/new'
+      preLoaderRoute: typeof CompetitionsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/competitions/$code/': {
@@ -257,25 +250,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompetitionsCodeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/competitions/$code/mc': {
-      id: '/competitions/$code/mc'
-      path: '/competitions/$code/mc'
-      fullPath: '/competitions/$code/mc'
-      preLoaderRoute: typeof CompetitionsCodeMcRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/competitions/$code/play': {
-      id: '/competitions/$code/play'
-      path: '/competitions/$code/play'
-      fullPath: '/competitions/$code/play'
-      preLoaderRoute: typeof CompetitionsCodePlayRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/competitions/$code/quiz': {
-      id: '/competitions/$code/quiz'
-      path: '/competitions/$code/quiz'
-      fullPath: '/competitions/$code/quiz'
-      preLoaderRoute: typeof CompetitionsCodeQuizRouteImport
+    '/play/$op/$level': {
+      id: '/play/$op/$level'
+      path: '/play/$op/$level'
+      fullPath: '/play/$op/$level'
+      preLoaderRoute: typeof PlayOpLevelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/competitions/$code/results': {
@@ -285,11 +264,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompetitionsCodeResultsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/play/$op/$level': {
-      id: '/play/$op/$level'
-      path: '/play/$op/$level'
-      fullPath: '/play/$op/$level'
-      preLoaderRoute: typeof PlayOpLevelRouteImport
+    '/competitions/$code/quiz': {
+      id: '/competitions/$code/quiz'
+      path: '/competitions/$code/quiz'
+      fullPath: '/competitions/$code/quiz'
+      preLoaderRoute: typeof CompetitionsCodeQuizRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/competitions/$code/play': {
+      id: '/competitions/$code/play'
+      path: '/competitions/$code/play'
+      fullPath: '/competitions/$code/play'
+      preLoaderRoute: typeof CompetitionsCodePlayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/competitions/$code/mc': {
+      id: '/competitions/$code/mc'
+      path: '/competitions/$code/mc'
+      fullPath: '/competitions/$code/mc'
+      preLoaderRoute: typeof CompetitionsCodeMcRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/mirror-backfill': {
+      id: '/api/public/mirror-backfill'
+      path: '/api/public/mirror-backfill'
+      fullPath: '/api/public/mirror-backfill'
+      preLoaderRoute: typeof ApiPublicMirrorBackfillRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
