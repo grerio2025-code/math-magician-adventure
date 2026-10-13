@@ -522,7 +522,7 @@ export const createQuiz = createServerFn({ method: "POST" })
         ops: ["+"],
         difficulty: "mudah",
         input_type: data.inputType,
-        duration_seconds: 86400,
+        duration_seconds: 3600,
         total_questions: data.questions.length,
         status: "upcoming",
         question_seed: 0,
