@@ -44,22 +44,18 @@ export default function QuizEditor({
     setBusy(true);
     setErr("");
     try {
-      const res = await gen({ data: { topic, count: Math.max(1, Math.min(30, count || 1)), inputType: gType, level } });
-      if (!res.ok) return setErr(res.error);
-      
-      // Memetakan hasil soal dari AI dengan aman
-      const questionsList = (res as any).questions || [];
-      const newItems: QuizItem[] = questionsList.map((q: any) => {
+      const r = await gen({ data: { topic, count: Math.max(1, Math.min(30, count || 1)), inputType: gType, level } });
+      if (!r.ok) return setErr(r.error);
+      const newItems: QuizItem[] = r.questions.map((q) => {
         if (gType === "choices") {
-          let ch = Array.isArray(q.choices) && q.choices.length >= 2 ? q.choices : [q.answer, ""];
+          let ch = q.choices.length >= 2 ? q.choices : [q.answer, ""];
           let idx = ch.findIndex((c: string) => c.trim().toLowerCase() === q.answer.trim().toLowerCase());
           if (idx < 0) { ch = [q.answer, ...ch].slice(0, 4); idx = 0; }
-          
-          // Acak posisi pilihan jawaban dengan aman (menggunakan variabel randIndex agar tidak konflik)
+          // Acak posisi pilihan agar jawaban benar tidak selalu di A
           const order = ch.map((_: string, k: number) => k);
           for (let k = order.length - 1; k > 0; k--) {
-            const randIndex = Math.floor(Math.random() * (k + 1));
-            [order[k], order[randIndex]] = [order[randIndex], order[k]];
+            const r = Math.floor(Math.random() * (k + 1));
+            [order[k], order[r]] = [order[r], order[k]];
           }
           ch = order.map((k) => ch[k]);
           idx = order.indexOf(idx);
@@ -67,12 +63,11 @@ export default function QuizEditor({
         }
         return { prompt: q.prompt, choices: ["", "", ""], correct: 0, answer: q.answer };
       });
-      
       setInputType(gType);
       setItems((prev) => [...prev.filter((p) => p.prompt.trim()), ...newItems]);
       setOpen(false);
-    } catch (e: any) {
-      setErr(e?.message || "Gagal membuat soal. Coba lagi.");
+    } catch {
+      setErr("Gagal membuat soal. Coba lagi.");
     } finally {
       setBusy(false);
     }
