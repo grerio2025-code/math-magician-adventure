@@ -758,7 +758,7 @@ export const generateQuizQuestions = createServerFn({ method: "POST" })
 
     if (geminiKey) {
       // Menggunakan model gemini-3.8-flash yang sesuai dengan AI Studio Anda
-      const model = process.env["GEMINI_MODEL"]?.trim() || "gemini-3.8-flash";
+      const model = process.env["GEMINI_MODEL"]?.trim() || "gemini-1.5-flash";
       const geminiBody = JSON.stringify({
         systemInstruction: { parts: [{ text: `Kamu pembuat soal quiz berbahasa Indonesia untuk lomba anak. ${sys}` }] },
         contents: [{ role: "user", parts: [{ text: `Buat ${data.count} soal tentang "${data.topic}", tingkat kesulitan ${lvl}.` }] }],
