@@ -756,7 +756,7 @@ export const generateQuizQuestions = createServerFn({ method: "POST" })
     if (geminiKey) {
       // Gemini API langsung (kunci milik pengguna, mis. di Netlify)
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey.trim() },
