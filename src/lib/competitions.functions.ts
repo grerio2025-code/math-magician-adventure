@@ -418,6 +418,7 @@ export const submitAnswer = createServerFn({ method: "POST" })
       .eq("player_key", data.playerKey)
       .maybeSingle();
     if (!part) return { ok: false as const, correct, error: "Kamu belum terdaftar." };
+    // Wrong answers add 0 points — never negative.
     if (data.questionIndex + 1 > part.answered) {
       await db
         .from("competition_participants")
@@ -738,12 +739,10 @@ export const generateQuizQuestions = createServerFn({ method: "POST" })
     const geminiKey = process.env["GEMINI_API_KEY"];
     const lovableKey = process.env["LOVABLE_API_KEY"];
     if (!geminiKey && !lovableKey) return { ok: false as const, error: "Layanan AI belum tersedia." };
-    
     const lvl = { beginner: "mudah (anak SD kelas awal)", intermediate: "menengah", advance: "sulit/lanjutan" }[data.level];
     const sys = data.inputType === "choices"
       ? "Setiap soal punya 4 pilihan jawaban singkat, tepat satu benar. 'answer' harus sama persis dengan salah satu 'choices'."
       : "Jawaban harus singkat (1-3 kata atau angka) agar mudah diketik. 'choices' kosong.";
-    
     const questionSchema = {
       type: "object",
       properties: {
@@ -753,12 +752,19 @@ export const generateQuizQuestions = createServerFn({ method: "POST" })
       },
       required: ["prompt", "answer"],
     };
-
     let rawQuestions: any[] | null = null;
-
     if (geminiKey) {
-      // Menggunakan model gemini-3.8-flash yang sesuai dengan AI Studio Anda
-      const model = process.env["GEMINI_MODEL"]?.trim() || "gemini-1.5-flash";
+      // Gemini API langsung (kunci milik pengguna, mis. di Netlify).
+      // Nama model dapat dipaksa lewat env GEMINI_MODEL; bila sebuah nama tidak
+      // dikenali oleh akun Anda (balasan 404) nama berikutnya dicoba otomatis.
+      const models = [
+        process.env["GEMINI_MODEL"]?.trim(),
+        "gemini-3.8-flash",
+        "gemini-3.8",
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+      ].filter((m, i, arr): m is string => !!m && arr.indexOf(m) === i);
       const geminiBody = JSON.stringify({
         systemInstruction: { parts: [{ text: `Kamu pembuat soal quiz berbahasa Indonesia untuk lomba anak. ${sys}` }] },
         contents: [{ role: "user", parts: [{ text: `Buat ${data.count} soal tentang "${data.topic}", tingkat kesulitan ${lvl}.` }] }],
@@ -771,30 +777,45 @@ export const generateQuizQuestions = createServerFn({ method: "POST" })
           },
         },
       });
-
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey.trim() },
-          body: geminiBody,
-        },
-      );
-
-      if (!res.ok) {
+      let sawNotFound = false;
+      let lastStatus = 0;
+      for (const model of models) {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey.trim() },
+            body: geminiBody,
+          },
+        );
+        if (res.ok) {
+          try {
+            const j: any = await res.json();
+            rawQuestions = JSON.parse(j.candidates[0].content.parts[0].text).questions;
+          } catch {
+            return { ok: false as const, error: "Gagal membaca hasil AI. Coba lagi." };
+          }
+          break;
+        }
         const txt = await res.text();
         console.error("Gemini error", model, res.status, txt.slice(0, 500));
         if (res.status === 429) return { ok: false as const, error: "Terlalu banyak permintaan / kuota Gemini habis, coba sebentar lagi." };
-        if (res.status === 401 || res.status === 403) return { ok: false as const, error: "Kunci Gemini ditolak. Periksa GEMINI_API_KEY di Netlify." };
-        if (res.status === 503) return { ok: false as const, error: "Server Google Gemini sedang sibuk (503). Coba sesaat lagi." };
-        return { ok: false as const, error: `Gagal membuat soal (Gemini ${res.status}). Coba lagi.` };
+        if (res.status === 401 || res.status === 403)
+          return { ok: false as const, error: "Kunci Gemini ditolak. Periksa GEMINI_API_KEY di Netlify." };
+        if (res.status === 404 || /not found|unsupported|does not exist|invalid model/i.test(txt)) {
+          sawNotFound = true;
+          continue;
+        }
+        lastStatus = res.status;
+        break;
       }
-
-      try {
-        const j: any = await res.json();
-        rawQuestions = JSON.parse(j.candidates[0].content.parts[0].text).questions;
-      } catch {
-        return { ok: false as const, error: "Gagal membaca hasil AI. Coba lagi." };
+      if (rawQuestions === null) {
+        if (sawNotFound)
+          return {
+            ok: false as const,
+            error: "Model Gemini tidak dikenali. Isi GEMINI_MODEL di Netlify dengan nama model yang aktif di akun Anda.",
+          };
+        return { ok: false as const, error: `Gagal membuat soal (Gemini ${lastStatus || "unknown"}). Coba lagi.` };
       }
     } else {
       const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -830,7 +851,6 @@ export const generateQuizQuestions = createServerFn({ method: "POST" })
         return { ok: false as const, error: "Gagal membaca hasil AI. Coba lagi." };
       }
     }
-
     const qs = (rawQuestions ?? [])
       .map((q) => ({
         prompt: String(q.prompt ?? "").slice(0, 500),
@@ -839,7 +859,6 @@ export const generateQuizQuestions = createServerFn({ method: "POST" })
       }))
       .filter((q) => q.prompt && q.answer)
       .slice(0, data.count);
-
     if (qs.length === 0) return { ok: false as const, error: "AI tidak menghasilkan soal. Coba lagi." };
     return { ok: true as const, questions: qs };
   });
