@@ -46,6 +46,10 @@ function QuizPlay() {
       if (prev?.position !== r.question?.position) {
         setInput("");
         setMsg(null);
+        setResult(null);
+        const c = r.competition;
+        if (c?.question_started_at)
+          setLeft(Math.max(0, (c.question_seconds ?? 20) - (Date.now() - new Date(c.question_started_at).getTime()) / 1000));
       }
       return r.question;
     });
