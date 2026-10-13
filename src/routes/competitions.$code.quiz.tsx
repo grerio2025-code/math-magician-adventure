@@ -80,7 +80,14 @@ function QuizPlay() {
     t();
     const id = window.setInterval(t, 250);
     return () => window.clearInterval(id);
-  }, [comp]);
+  }, [comp?.question_started_at, comp?.question_seconds, comp?.status]);
+
+  // Saat waktu soal habis, cek MC lebih sering agar soal berikutnya langsung muncul
+  useEffect(() => {
+    if (left > 0 || comp?.status !== "live") return;
+    const id = window.setInterval(refresh, 1000);
+    return () => window.clearInterval(id);
+  }, [left <= 0, comp?.status, refresh]);
 
   const answer = async (value: string) => {
     if (!q || answered || !value.trim()) return;
