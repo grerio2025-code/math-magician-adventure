@@ -52,7 +52,7 @@ export default function QuizEditor({
           let idx = ch.findIndex((c: string) => c.trim().toLowerCase() === q.answer.trim().toLowerCase());
           if (idx < 0) { ch = [q.answer, ...ch].slice(0, 4); idx = 0; }
           // Acak posisi pilihan agar jawaban benar tidak selalu di A
-          const order = ch.map((_, k) => k);
+          const order = ch.map((_: string, k: number) => k);
           for (let k = order.length - 1; k > 0; k--) {
             const r = Math.floor(Math.random() * (k + 1));
             [order[k], order[r]] = [order[r], order[k]];
