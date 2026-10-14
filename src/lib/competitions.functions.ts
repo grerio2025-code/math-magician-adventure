@@ -779,37 +779,51 @@ export const generateQuizQuestions = createServerFn({ method: "POST" })
       });
       let sawNotFound = false;
       let lastStatus = 0;
-      for (const model of models) {
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey.trim() },
-            body: geminiBody,
-          },
-        );
-        if (res.ok) {
-          try {
-            const j: any = await res.json();
-            rawQuestions = JSON.parse(j.candidates[0].content.parts[0].text).questions;
-          } catch {
-            return { ok: false as const, error: "Gagal membaca hasil AI. Coba lagi." };
+      outer: for (const model of models) {
+        for (let attempt = 0; attempt < 3; attempt++) {
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey.trim() },
+              body: geminiBody,
+            },
+          );
+          if (res.ok) {
+            try {
+              const j: any = await res.json();
+              rawQuestions = JSON.parse(j.candidates[0].content.parts[0].text).questions;
+            } catch {
+              return { ok: false as const, error: "Gagal membaca hasil AI. Coba lagi." };
+            }
+            break outer;
           }
-          break;
+          const txt = await res.text();
+          console.error("Gemini error", model, res.status, txt.slice(0, 500));
+          if (res.status === 401 || res.status === 403)
+            return { ok: false as const, error: "Kunci Gemini ditolak. Periksa GEMINI_API_KEY di Netlify." };
+          if (res.status === 404 || /not found|unsupported|does not exist|invalid model/i.test(txt)) {
+            sawNotFound = true;
+            continue outer;
+          }
+          lastStatus = res.status;
+          // 503/500 = server Google sibuk; 429 = kuota model ini. Tunggu sebentar lalu ulangi,
+          // setelah 3x coba model berikutnya.
+          if (res.status >= 500 || res.status === 429) {
+            if (attempt < 2) {
+              await new Promise((r) => setTimeout(r, 1200 * (attempt + 1)));
+              continue;
+            }
+            continue outer;
+          }
+          break outer;
         }
-        const txt = await res.text();
-        console.error("Gemini error", model, res.status, txt.slice(0, 500));
-        if (res.status === 429) return { ok: false as const, error: "Terlalu banyak permintaan / kuota Gemini habis, coba sebentar lagi." };
-        if (res.status === 401 || res.status === 403)
-          return { ok: false as const, error: "Kunci Gemini ditolak. Periksa GEMINI_API_KEY di Netlify." };
-        if (res.status === 404 || /not found|unsupported|does not exist|invalid model/i.test(txt)) {
-          sawNotFound = true;
-          continue;
-        }
-        lastStatus = res.status;
-        break;
       }
       if (rawQuestions === null) {
+        if (lastStatus === 503 || lastStatus === 500)
+          return { ok: false as const, error: "Server Gemini sedang sibuk (503). Tunggu 1 menit lalu coba lagi." };
+        if (lastStatus === 429)
+          return { ok: false as const, error: "Terlalu banyak permintaan / kuota Gemini habis, coba sebentar lagi." };
         if (sawNotFound)
           return {
             ok: false as const,
