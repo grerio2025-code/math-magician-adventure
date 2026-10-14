@@ -57,7 +57,7 @@ export default function QuizEditor({
             const r = Math.floor(Math.random() * (k + 1));
             [order[k], order[r]] = [order[r], order[k]];
           }
-          ch = order.map((k) => ch[k]);
+          ch = order.map((k: number) => ch[k]);
           idx = order.indexOf(idx);
           return { prompt: q.prompt, choices: ch, correct: idx, answer: q.answer };
         }
